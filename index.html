@@ -263,6 +263,7 @@ let bird, pipes, coins, powerUps, particles;
 let enemies, lastEnemyTime, enemyInterval;
 let slashEffects = [];
 let breathAttacks = [];
+let superAttacks  = [];
 let demonsKilled  = 0;
 let chargeLevel   = 0;   // 0–1 built while gliding
 let prevGliding   = false;
@@ -275,6 +276,7 @@ const SLASH_FLASH  = ['rgb(80,180,255)','rgb(255,238,0)','rgb(85,255,170)','rgb(
 const SLASH_NAMES  = ['水の呼吸','雷の呼吸','獣の呼吸','炎の呼吸'];
 const SLASH_LABELS = ['Water Breathing','Thunder Breathing','Beast Breathing','Flame Breathing'];
 const BREATH_FORMS = ['Tenth Form: Constant Flux','First Form: Thunderclap Flash','Seventh Fang: Spatial Awareness','Ninth Form: Rengoku'];
+const SUPER_FORMS  = ['Total Concentration: Raging Torrent','God Speed: Heaven\'s Thunder','Beast Rampage: Primal Fury','Flame Breathing: Purgatory'];
 let score, lastPipeTime, currentLevel, levelUpTimer;
 let pipeSpeed, pipeGap, pipeInterval;
 let shieldActive, shieldTimer, flashTimer, flashColor;
@@ -489,7 +491,7 @@ function updateDiffForLevel() {
 function initGame() {
   updateDiffForLevel();
   bird       = { x:W*0.2, y:H/2, vy:0, radius:16, wingAngle:0 };
-  pipes      = []; coins=[]; powerUps=[]; particles=[]; enemies=[]; slashEffects=[]; breathAttacks=[]; pipeBreaks=[];
+  pipes      = []; coins=[]; powerUps=[]; particles=[]; enemies=[]; slashEffects=[]; breathAttacks=[]; superAttacks=[]; pipeBreaks=[];
   demonsKilled=0; chargeLevel=0; prevGliding=false;
   score=0; lastPipeTime=0; lastEnemyTime=0; currentLevel=0; levelUpTimer=0;
   shieldActive=false; shieldTimer=0; flashTimer=0; flashColor='#fff';
@@ -840,11 +842,30 @@ function drawChargingAura(x, y) {
 function spawnBreathAttack(x, y, birdIdx, power) {
   breathAttacks.push({
     x, y, birdIdx, power, t:0, life:1,
-    vx: birdIdx===1 ? 42 : 11+power*7,  // Zenitsu = instant
+    vx: birdIdx===1 ? 42 : 11+power*7,
     hw: 30+power*24, hh: 24+power*18,
   });
   playSlash();
   flashTimer=14; flashColor=SLASH_FLASH[birdIdx];
+}
+
+function playSuperSlash() {
+  sfx(80,'sawtooth',0.28,0.55); sfx(120,'sawtooth',0.22,0.5,0.05);
+  sfx(200,'square',0.18,0.4,0.08); sfx(340,'sine',0.15,0.35,0.12);
+  sfx(55,'sawtooth',0.32,0.6,0.02);
+}
+
+function spawnSuperAttack(x, y, birdIdx) {
+  superAttacks.push({ x, y, birdIdx, t:0, life:1, vx:6, hh:H*0.48, hw:100 });
+  flashTimer=40; flashColor=SLASH_FLASH[birdIdx];
+  shakeTimer=35; shakeAmt=16;
+  playSuperSlash();
+  // Burst of particles in all directions
+  for(let i=0;i<40;i++){
+    const ang=Math.random()*Math.PI*2, spd=3+Math.random()*10;
+    particles.push({x, y, vx:Math.cos(ang)*spd, vy:Math.sin(ang)*spd,
+      life:1, color:SLASH_FLASH[birdIdx], size:3+Math.random()*6});
+  }
 }
 
 function drawBreathAttacks() {
@@ -955,6 +976,183 @@ function drawBreathAttacks() {
       ctx.fillText(BREATH_FORMS[a.birdIdx],0,-50-a.power*10);
       ctx.font='11px Arial'; ctx.fillStyle='rgba(255,255,255,0.85)';
       ctx.fillText(SLASH_NAMES[a.birdIdx],0,-35-a.power*8);
+      ctx.shadowBlur=0;
+    }
+    ctx.restore();
+  });
+  ctx.globalAlpha=1;
+}
+
+function drawSuperAttacks() {
+  superAttacks.forEach(a=>{
+    const al=a.life, t=a.t, R=H*0.24; // half-height radius
+    ctx.save(); ctx.translate(a.x, a.y);
+
+    if (a.birdIdx===0) {
+      // ── Tanjiro: Total Concentration — Raging Torrent ──
+      // Massive water-dragon backdrop glow
+      ctx.shadowColor='#00aaff'; ctx.shadowBlur=60;
+      const bg=ctx.createRadialGradient(0,0,0,0,0,R*1.3);
+      bg.addColorStop(0,`rgba(100,220,255,${al*0.18})`); bg.addColorStop(1,'rgba(0,100,255,0)');
+      ctx.globalAlpha=al; ctx.fillStyle=bg;
+      ctx.beginPath(); ctx.ellipse(R,0,R*1.4,R*1.1,0,0,Math.PI*2); ctx.fill();
+      // 18 sinusoidal streams spanning full H*0.5
+      for(let j=0;j<18;j++){
+        const yOff=(j/(17))*(R*2)-R, amp=18+Math.sin(j)*10;
+        const g=ctx.createLinearGradient(0,yOff,W,yOff);
+        g.addColorStop(0,`rgba(180,240,255,${al})`);
+        g.addColorStop(0.5,`rgba(60,160,255,${al*0.8})`);
+        g.addColorStop(1,'rgba(30,100,255,0)');
+        ctx.strokeStyle=g; ctx.lineWidth=3.5; ctx.lineCap='round'; ctx.globalAlpha=al*0.9;
+        ctx.beginPath();
+        for(let x2=0;x2<=W;x2+=5){
+          const y2=yOff+Math.sin(x2*0.07+t*0.3+j*0.4)*amp;
+          x2===0?ctx.moveTo(x2,y2):ctx.lineTo(x2,y2);
+        }
+        ctx.stroke();
+      }
+      // Rotating water rings
+      for(let r=0;r<4;r++){
+        const rad=40+r*30+t*2, rAl=al*Math.max(0,1-(rad/(R*2)));
+        ctx.globalAlpha=rAl*0.6; ctx.strokeStyle=`rgba(140,220,255,${rAl})`;
+        ctx.lineWidth=2.5; ctx.beginPath(); ctx.arc(0,0,rad,0,Math.PI*2); ctx.stroke();
+      }
+      // Kanji waterfall effect
+      ctx.globalAlpha=al*0.85; ctx.textAlign='center';
+      ctx.font=`bold ${Math.round(R*0.45)}px Arial`; ctx.fillStyle=`rgba(200,240,255,${al})`;
+      ctx.shadowColor='#00ccff'; ctx.shadowBlur=30;
+      ctx.fillText('水', 20, 14);
+
+    } else if (a.birdIdx===1) {
+      // ── Zenitsu: God Speed — Heaven's Thunder ──
+      ctx.shadowColor='#ffff00'; ctx.shadowBlur=80;
+      // Blinding radial flash
+      const bg=ctx.createRadialGradient(0,0,0,0,0,R*1.5);
+      bg.addColorStop(0,`rgba(255,255,200,${al*0.45})`);
+      bg.addColorStop(0.4,`rgba(255,220,0,${al*0.2})`);
+      bg.addColorStop(1,'rgba(255,180,0,0)');
+      ctx.globalAlpha=al; ctx.fillStyle=bg;
+      ctx.beginPath(); ctx.ellipse(R,0,R*1.6,R*1.2,0,0,Math.PI*2); ctx.fill();
+      // 8 parallel lightning bolts across full width
+      for(let j=0;j<8;j++){
+        const yOff=(j/7)*(R*2)-R;
+        for(let pass=0;pass<3;pass++){
+          ctx.globalAlpha=al*(1-pass*0.28);
+          ctx.strokeStyle=pass===0?`rgba(255,255,220,${al})`:`rgba(255,210,0,${al*0.7})`;
+          ctx.lineWidth=pass===0?6:2.5; ctx.lineCap='round';
+          ctx.beginPath(); ctx.moveTo(0,yOff);
+          for(let x2=0;x2<W;x2+=14)
+            ctx.lineTo(x2,(yOff+(Math.random()-0.5)*(8+pass*5)));
+          ctx.stroke();
+        }
+        // bolt branches
+        for(let b=0;b<3;b++){
+          const sx=30+b*80, bY=yOff+(Math.random()-0.5)*14;
+          ctx.globalAlpha=al*0.5; ctx.strokeStyle='rgba(255,240,100,0.8)'; ctx.lineWidth=1.5;
+          ctx.beginPath(); ctx.moveTo(sx,bY);
+          for(let x2=0;x2<45;x2+=9) ctx.lineTo(sx+x2,(bY+(Math.random()-0.5)*20));
+          ctx.stroke();
+        }
+      }
+      ctx.globalAlpha=al*0.9; ctx.textAlign='center';
+      ctx.font=`bold ${Math.round(R*0.45)}px Arial`; ctx.fillStyle=`rgba(255,255,180,${al})`;
+      ctx.shadowColor='#ffff00'; ctx.shadowBlur=40;
+      ctx.fillText('雷', 20, 14);
+
+    } else if (a.birdIdx===2) {
+      // ── Inosuke: Beast Rampage — Primal Fury ──
+      ctx.shadowColor='#44ffaa'; ctx.shadowBlur=50;
+      // Wind aura
+      const bg=ctx.createRadialGradient(0,0,0,0,0,R*1.3);
+      bg.addColorStop(0,`rgba(100,255,180,${al*0.18})`); bg.addColorStop(1,'rgba(50,200,120,0)');
+      ctx.globalAlpha=al; ctx.fillStyle=bg;
+      ctx.beginPath(); ctx.ellipse(R*0.8,0,R*1.3,R*1.1,0,0,Math.PI*2); ctx.fill();
+      // 13 claw slashes in a huge fan spanning full H*0.5
+      const clawAngles=[-0.65,-0.48,-0.32,-0.16,0,0.16,0.32,0.48,0.65,-0.82,0.82,-0.55,0.55];
+      clawAngles.forEach((ang,j)=>{
+        const len=100+Math.cos(ang)*80, thick=5-Math.abs(ang)*2.5;
+        ctx.save(); ctx.rotate(ang);
+        const g=ctx.createLinearGradient(0,0,len,0);
+        g.addColorStop(0,`rgba(100,255,180,${al})`);
+        g.addColorStop(0.6,`rgba(60,220,140,${al*0.7})`);
+        g.addColorStop(1,'rgba(40,180,100,0)');
+        ctx.strokeStyle=g; ctx.lineWidth=Math.max(1,thick); ctx.lineCap='round';
+        ctx.globalAlpha=al*0.92;
+        ctx.beginPath();
+        for(let x2=0;x2<=len;x2+=5){
+          const y2=Math.sin(x2*0.1+t*0.4+j*0.6)*(6-Math.abs(ang)*4);
+          x2===0?ctx.moveTo(x2,y2):ctx.lineTo(x2,y2);
+        }
+        ctx.stroke();
+        // Claw tip
+        ctx.globalAlpha=al*0.8; ctx.fillStyle='rgba(180,255,220,0.9)';
+        ctx.beginPath(); ctx.arc(len,0,4,0,Math.PI*2); ctx.fill();
+        ctx.restore();
+      });
+      // Wind rings
+      for(let r=0;r<3;r++){
+        const rw=60+r*45+t*3, rh=rw*0.4;
+        ctx.globalAlpha=al*Math.max(0,0.5-rw/(R*3));
+        ctx.strokeStyle='rgba(120,255,180,0.6)'; ctx.lineWidth=2;
+        ctx.beginPath(); ctx.ellipse(rw*0.3,0,rw,rh,0,0,Math.PI*2); ctx.stroke();
+      }
+      ctx.globalAlpha=al*0.85; ctx.textAlign='center';
+      ctx.font=`bold ${Math.round(R*0.45)}px Arial`; ctx.fillStyle=`rgba(180,255,220,${al})`;
+      ctx.shadowColor='#44ffaa'; ctx.shadowBlur=30;
+      ctx.fillText('獣', 20, 14);
+
+    } else {
+      // ── Rengoku: Flame Breathing — Purgatory ──
+      ctx.shadowColor='#ff4400'; ctx.shadowBlur=80;
+      // Giant fireball core
+      const coreR=55+Math.sin(t*0.15)*8;
+      const core=ctx.createRadialGradient(0,0,0,0,0,coreR);
+      core.addColorStop(0,`rgba(255,255,220,${al})`);
+      core.addColorStop(0.3,`rgba(255,180,0,${al*0.95})`);
+      core.addColorStop(0.7,`rgba(255,60,0,${al*0.7})`);
+      core.addColorStop(1,'rgba(200,0,0,0)');
+      ctx.globalAlpha=al; ctx.fillStyle=core;
+      ctx.beginPath(); ctx.arc(0,0,coreR,0,Math.PI*2); ctx.fill();
+      // 26 flame tongues radiating in all directions covering H*0.5
+      for(let j=0;j<26;j++){
+        const ang=(j/26)*Math.PI*2, flen=R*0.6+Math.sin(t*0.08+j)*R*0.25;
+        const flick=1+Math.sin(t*0.5+j*0.7)*0.35;
+        ctx.save(); ctx.rotate(ang);
+        const fg=ctx.createLinearGradient(coreR*0.3,0,flen*flick,0);
+        fg.addColorStop(0,`rgba(255,240,100,${al*0.95})`);
+        fg.addColorStop(0.4,`rgba(255,100,0,${al*0.8})`);
+        fg.addColorStop(1,'rgba(200,0,0,0)');
+        ctx.strokeStyle=fg; ctx.lineWidth=5+Math.sin(j)*2; ctx.lineCap='round';
+        ctx.globalAlpha=al*0.9;
+        ctx.beginPath(); ctx.moveTo(coreR*0.3,0); ctx.lineTo(flen*flick,0); ctx.stroke();
+        ctx.restore();
+      }
+      // Fire vortex rings
+      for(let r=0;r<5;r++){
+        const rad=coreR+25+r*22+t*1.5, rAl=al*Math.max(0,0.7-r*0.12);
+        ctx.globalAlpha=rAl; ctx.strokeStyle=`rgba(255,${80+r*20},0,${rAl})`;
+        ctx.lineWidth=3; ctx.beginPath(); ctx.arc(0,0,rad,0,Math.PI*2); ctx.stroke();
+      }
+      // Ember shower
+      for(let i=0;i<18;i++){
+        const ea=Math.random()*Math.PI*2, er=coreR+Math.random()*R;
+        ctx.globalAlpha=al*0.75; ctx.fillStyle=Math.random()>0.5?'#ffdd00':'#ff6600';
+        ctx.beginPath(); ctx.arc(Math.cos(ea)*er,Math.sin(ea)*er,2+Math.random()*4,0,Math.PI*2); ctx.fill();
+      }
+      ctx.globalAlpha=al*0.9; ctx.textAlign='center';
+      ctx.font=`bold ${Math.round(R*0.45)}px Arial`; ctx.fillStyle=`rgba(255,220,100,${al})`;
+      ctx.shadowColor='#ff6600'; ctx.shadowBlur=40;
+      ctx.fillText('炎', 20, 14);
+    }
+
+    // Super technique label — large and prominent
+    if(al>0.5){
+      const la=(al-0.5)/0.5;
+      ctx.globalAlpha=la; ctx.textAlign='left'; ctx.shadowColor=SLASH_FLASH[a.birdIdx]; ctx.shadowBlur=18;
+      ctx.font=`bold ${18}px Arial`; ctx.fillStyle='#ffffff';
+      ctx.fillText(`★ ${SUPER_FORMS[a.birdIdx]}`,10,-R-8);
+      ctx.font='13px Arial'; ctx.fillStyle=SLASH_FLASH[a.birdIdx];
+      ctx.fillText(SLASH_NAMES[a.birdIdx],10,-R+12);
       ctx.shadowBlur=0;
     }
     ctx.restore();
@@ -1769,10 +1967,19 @@ function drawHUD() {
     const bw=160, bh=10, bx=W/2-bw/2, by=92;
     ctx.textAlign='center';
     if (gliding) {
-      ctx.font='bold 12px Arial'; ctx.fillStyle=SLASH_FLASH[selectedBird];
-      ctx.shadowColor=SLASH_FLASH[selectedBird]; ctx.shadowBlur=8;
-      ctx.fillText(`⚡ ${BREATH_FORMS[selectedBird]}`, W/2, by-4);
-      ctx.shadowBlur=0;
+      if (chargeLevel>=0.999) {
+        const pulse=0.7+0.3*Math.abs(Math.sin(performance.now()*0.012));
+        ctx.globalAlpha=pulse;
+        ctx.font='bold 13px Arial'; ctx.fillStyle='#ffffff';
+        ctx.shadowColor=SLASH_FLASH[selectedBird]; ctx.shadowBlur=22;
+        ctx.fillText(`★ SUPER READY — RELEASE! ★`, W/2, by-4);
+        ctx.shadowBlur=0; ctx.globalAlpha=1;
+      } else {
+        ctx.font='bold 12px Arial'; ctx.fillStyle=SLASH_FLASH[selectedBird];
+        ctx.shadowColor=SLASH_FLASH[selectedBird]; ctx.shadowBlur=8;
+        ctx.fillText(`⚡ ${BREATH_FORMS[selectedBird]}`, W/2, by-4);
+        ctx.shadowBlur=0;
+      }
     }
     // track bg
     ctx.fillStyle='rgba(0,0,0,0.35)'; ctx.beginPath(); ctx.roundRect(bx,by,bw,bh,5); ctx.fill();
@@ -1901,9 +2108,10 @@ function update(now) {
   prevGliding = gliding;
   gliding = inputHeld && bird.vy >= 0;
 
-  // Glide → release: fire breath attack
+  // Glide → release: full charge = super attack, otherwise normal breath
   if (prevGliding && !gliding) {
-    if (chargeLevel > 0.05) spawnBreathAttack(bird.x+bird.radius, bird.y, selectedBird, chargeLevel);
+    if (chargeLevel >= 0.999) spawnSuperAttack(bird.x+bird.radius, bird.y, selectedBird);
+    else if (chargeLevel > 0.05) spawnBreathAttack(bird.x+bird.radius, bird.y, selectedBird, chargeLevel);
     chargeLevel = 0;
   }
   if (gliding) {
@@ -1991,6 +2199,22 @@ function update(now) {
     }
   }
 
+  // Super attacks — move + wipe enemies across half-screen height
+  for (let i=superAttacks.length-1; i>=0; i--) {
+    const a=superAttacks[i];
+    a.t++; a.x+=a.vx;
+    a.life -= 0.010; // slow fade — lingers impressively
+    if (a.life<=0||a.x>W+200) { superAttacks.splice(i,1); continue; }
+    for (let j=enemies.length-1; j>=0; j--) {
+      const e=enemies[j];
+      if (Math.abs(a.x-e.x)<a.hw+e.hw && Math.abs(a.y-e.y)<a.hh) {
+        enemies.splice(j,1); demonsKilled++; score+=5;
+        spawnSlash(e.x, e.y, a.birdIdx); playSlash();
+        flashTimer=6; flashColor=SLASH_FLASH[a.birdIdx];
+      }
+    }
+  }
+
   // Pipe-break shards physics
   pipeBreaks.forEach(s=>{ s.x+=s.vx; s.y+=s.vy; s.vy+=0.28; s.vx*=0.97; s.rot+=s.rotV; s.life-=0.025; });
   pipeBreaks=pipeBreaks.filter(s=>s.life>0);
@@ -2028,6 +2252,7 @@ function loop(now) {
     powerUps.forEach(drawPowerUp);
     enemies.forEach(drawEnemy);
     drawBreathAttacks();
+    drawSuperAttacks();
     drawSlashEffects();
     drawPipeBreaks();
     drawParticles();
@@ -2047,7 +2272,7 @@ function loop(now) {
 
 // ── Boot
 bird = { x:W*0.2, y:H/2, vy:0, radius:16, wingAngle:0 };
-particles=[]; coins=[]; powerUps=[]; enemies=[]; slashEffects=[]; breathAttacks=[]; pipeBreaks=[];
+particles=[]; coins=[]; powerUps=[]; enemies=[]; slashEffects=[]; breathAttacks=[]; superAttacks=[]; pipeBreaks=[];
 demonsKilled=0; chargeLevel=0; currentLevel=0; lastEnemyTime=0; shakeTimer=0;
 requestAnimationFrame(loop);
 </script>
