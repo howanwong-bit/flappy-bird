@@ -468,6 +468,8 @@ let superAttacks  = [];
 let demonsKilled  = 0;
 let chargeLevel   = 0;   // 0–1 built while gliding
 let superCooldown = 0;   // frames until super can fire again (300 = 5s)
+let superLabelTimer = 0; // frames to show super name label (independent of attack life)
+let superLabelIdx   = 0; // which character's label to show
 let prevGliding   = false;
 let invincible    = false; // secret mode: hold Backspace
 let demoMode      = false; // AI auto-play
@@ -710,7 +712,7 @@ function initGame() {
   updateDiffForLevel();
   bird       = { x:W*0.2, y:H/2, vy:0, radius:16, wingAngle:0 };
   pipes      = []; coins=[]; powerUps=[]; particles=[]; enemies=[]; slashEffects=[]; breathAttacks=[]; superAttacks=[]; pipeBreaks=[]; burnZones=[]; pipeSlowTimer=0; timeDilTimer=0;
-  demonsKilled=0; chargeLevel=0; prevGliding=false; superCooldown=0;
+  demonsKilled=0; chargeLevel=0; prevGliding=false; superCooldown=0; superLabelTimer=0;
   score=0; lastPipeTime=0; lastEnemyTime=0; currentLevel=0; levelUpTimer=0;
   shieldActive=false; shieldTimer=0; shieldIsSuper=false; flashTimer=0; flashColor='#fff';
   gliding=false; inputHeld=false; skyTheme=0; demoJumpCD=0;
@@ -3382,6 +3384,24 @@ function drawHUD() {
     }
   }
 
+  // Persistent super move label (3s, fades last 60 frames)
+  if (superLabelTimer>0) {
+    const al = superLabelTimer<=60 ? superLabelTimer/60 : 1;
+    const col = SLASH_FLASH[superLabelIdx];
+    ctx.save();
+    ctx.globalAlpha = al;
+    ctx.textAlign = 'center';
+    // Kanji
+    ctx.font = `bold ${Math.round(W*0.11)}px Arial`;
+    ctx.fillStyle = col; ctx.shadowColor = col; ctx.shadowBlur = 40;
+    ctx.fillText(['水','雷','獣','炎','虫','音','霞','恋','水','岩','風','蛇'][superLabelIdx], W/2, H*0.44);
+    // Super name
+    ctx.font = `bold 15px Arial`;
+    ctx.fillStyle = '#fff'; ctx.shadowColor = col; ctx.shadowBlur = 18;
+    ctx.fillText(`★ ${SUPER_FORMS[superLabelIdx]}`, W/2, H*0.44 + Math.round(W*0.11)*0.6);
+    ctx.restore();
+  }
+
   // Time dilation indicator (Muichiro)
   if (timeDilTimer>0) {
     const pct=timeDilTimer/240;
@@ -3539,7 +3559,7 @@ function update(now) {
 
   // Glide → release: full charge = super attack, otherwise normal breath
   if (prevGliding && !gliding) {
-    if (chargeLevel >= 0.999 && superCooldown <= 0) { spawnSuperAttack(bird.x+bird.radius, bird.y, selectedBird); superCooldown=[240,510,390,360,300,330,510,240,390,570,300,300][selectedBird]; }
+    if (chargeLevel >= 0.999 && superCooldown <= 0) { spawnSuperAttack(bird.x+bird.radius, bird.y, selectedBird); superCooldown=[240,510,390,360,300,330,510,240,390,570,300,300][selectedBird]; superLabelTimer=180; superLabelIdx=selectedBird; }
     else if (chargeLevel > 0.05) spawnBreathAttack(bird.x+bird.radius, bird.y, selectedBird, chargeLevel);
     chargeLevel = 0;
   }
@@ -3758,6 +3778,7 @@ function update(now) {
   if (pipeSlowTimer>0) pipeSlowTimer--;
   if (timeDilTimer>0) timeDilTimer--;
   if (superCooldown>0) superCooldown--;
+  if (superLabelTimer>0) superLabelTimer--;
 
   emitTrail(BIRD_DEFS[selectedBird]);
   updateParticles();
