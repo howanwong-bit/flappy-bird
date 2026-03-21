@@ -1279,7 +1279,7 @@ function spawnSuperAttack(x, y, birdIdx) {
       });
       break;
     case 5: // Tengen — 3 expanding shockwave rings + slow pipes
-      pipeSlowTimer=150;
+      pipeSlowTimer=180;
       superAttacks.push({x, y, birdIdx, t:0, life:1, vx:0, hh:0, hw:0, type:'pulse'});
       break;
     case 6: // Muichiro — time dilation: all movement 25% speed for 4s
@@ -3399,7 +3399,7 @@ function drawHUD() {
   }
   // Pipe-slow indicator (Tengen)
   if (pipeSlowTimer>0) {
-    const pct=pipeSlowTimer/150;
+    const pct=pipeSlowTimer/180;
     ctx.save();
     ctx.globalAlpha=pct*0.5; ctx.textAlign='right'; ctx.font='bold 11px Arial';
     ctx.fillStyle='rgba(255,215,60,0.9)'; ctx.shadowColor='#ffd000'; ctx.shadowBlur=10;
@@ -3541,7 +3541,7 @@ function update(now) {
   if (now-lastPipeTime>pipeInterval) spawnPipe(now);
 
   // Speed multiplier (Tengen pipe-slow / Muichiro time-dilation)
-  const _sm = timeDilTimer>0 ? 0.25 : pipeSlowTimer>0 ? 0.6 : 1;
+  const _sm = timeDilTimer>0 ? 0.25 : pipeSlowTimer>0 ? 0.5 : 1;
 
   // Update pipes + score
   for (const p of pipes) {
