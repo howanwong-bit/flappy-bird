@@ -467,6 +467,7 @@ let breathAttacks = [];
 let superAttacks  = [];
 let demonsKilled  = 0;
 let chargeLevel   = 0;   // 0–1 built while gliding
+let superCooldown = 0;   // frames until super can fire again (300 = 5s)
 let prevGliding   = false;
 let invincible    = false; // secret mode: hold Backspace
 let demoMode      = false; // AI auto-play
@@ -709,7 +710,7 @@ function initGame() {
   updateDiffForLevel();
   bird       = { x:W*0.2, y:H/2, vy:0, radius:16, wingAngle:0 };
   pipes      = []; coins=[]; powerUps=[]; particles=[]; enemies=[]; slashEffects=[]; breathAttacks=[]; superAttacks=[]; pipeBreaks=[]; burnZones=[]; pipeSlowTimer=0; timeDilTimer=0;
-  demonsKilled=0; chargeLevel=0; prevGliding=false;
+  demonsKilled=0; chargeLevel=0; prevGliding=false; superCooldown=0;
   score=0; lastPipeTime=0; lastEnemyTime=0; currentLevel=0; levelUpTimer=0;
   shieldActive=false; shieldTimer=0; shieldIsSuper=false; flashTimer=0; flashColor='#fff';
   gliding=false; inputHeld=false; skyTheme=0; demoJumpCD=0;
@@ -3351,13 +3352,16 @@ function drawHUD() {
     const bw=160, bh=10, bx=W/2-bw/2, by=92;
     ctx.textAlign='center';
     if (gliding) {
-      if (chargeLevel>=0.999) {
+      if (chargeLevel>=0.999 && superCooldown<=0) {
         const pulse=0.7+0.3*Math.abs(Math.sin(performance.now()*0.012));
         ctx.globalAlpha=pulse;
         ctx.font='bold 13px Arial'; ctx.fillStyle='#ffffff';
         ctx.shadowColor=SLASH_FLASH[selectedBird]; ctx.shadowBlur=22;
         ctx.fillText(`★ SUPER READY — RELEASE! ★`, W/2, by-4);
         ctx.shadowBlur=0; ctx.globalAlpha=1;
+      } else if (superCooldown>0 && chargeLevel>=0.999) {
+        ctx.font='bold 12px Arial'; ctx.fillStyle='rgba(180,180,180,0.85)';
+        ctx.fillText(`⏱ SUPER CD ${Math.ceil(superCooldown/60)}s`, W/2, by-4);
       } else {
         ctx.font='bold 12px Arial'; ctx.fillStyle=SLASH_FLASH[selectedBird];
         ctx.shadowColor=SLASH_FLASH[selectedBird]; ctx.shadowBlur=8;
@@ -3518,7 +3522,7 @@ function update(now) {
 
   // Glide → release: full charge = super attack, otherwise normal breath
   if (prevGliding && !gliding) {
-    if (chargeLevel >= 0.999) spawnSuperAttack(bird.x+bird.radius, bird.y, selectedBird);
+    if (chargeLevel >= 0.999 && superCooldown <= 0) { spawnSuperAttack(bird.x+bird.radius, bird.y, selectedBird); superCooldown=300; }
     else if (chargeLevel > 0.05) spawnBreathAttack(bird.x+bird.radius, bird.y, selectedBird, chargeLevel);
     chargeLevel = 0;
   }
@@ -3716,6 +3720,7 @@ function update(now) {
   if (shakeTimer>0) shakeTimer--;
   if (pipeSlowTimer>0) pipeSlowTimer--;
   if (timeDilTimer>0) timeDilTimer--;
+  if (superCooldown>0) superCooldown--;
 
   emitTrail(BIRD_DEFS[selectedBird]);
   updateParticles();
@@ -3776,7 +3781,7 @@ function loop(now) {
 // ── Boot
 bird = { x:W*0.2, y:H/2, vy:0, radius:16, wingAngle:0 };
 particles=[]; coins=[]; powerUps=[]; enemies=[]; slashEffects=[]; breathAttacks=[]; superAttacks=[]; pipeBreaks=[]; burnZones=[]; pipeSlowTimer=0; timeDilTimer=0;
-demonsKilled=0; chargeLevel=0; currentLevel=0; lastEnemyTime=0; shakeTimer=0;
+demonsKilled=0; chargeLevel=0; superCooldown=0; currentLevel=0; lastEnemyTime=0; shakeTimer=0;
 requestAnimationFrame(loop);
 </script>
 </body>
