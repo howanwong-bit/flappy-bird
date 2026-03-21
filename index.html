@@ -472,6 +472,9 @@ let invincible    = false; // secret mode: hold Backspace
 let demoMode      = false; // AI auto-play
 let demoJumpCD    = 0;     // frames until AI can jump again
 let pipeBreaks    = [];    // flying shard debris
+let burnZones     = [];    // Rengoku: lingering fire zones
+let pipeSlowTimer = 0;     // Tengen: slow pipe speed (~150 frames)
+let timeDilTimer  = 0;     // Muichiro: time dilation (~240 frames)
 let shakeTimer    = 0, shakeAmt = 0;
 const SLASH_FLASH  = ['rgb(80,180,255)','rgb(255,238,0)','rgb(85,255,170)','rgb(255,120,0)','rgb(190,80,255)','rgb(255,215,60)','rgb(80,220,210)','rgb(255,100,180)','rgb(30,100,200)','rgb(180,140,80)','rgb(150,255,200)','rgb(60,200,120)'];
 const SLASH_NAMES  = ['水の呼吸','雷の呼吸','獣の呼吸','炎の呼吸','虫の呼吸','音の呼吸','霞の呼吸','恋の呼吸','水の呼吸','岩の呼吸','風の呼吸','蛇の呼吸'];
@@ -705,7 +708,7 @@ function updateDiffForLevel() {
 function initGame() {
   updateDiffForLevel();
   bird       = { x:W*0.2, y:H/2, vy:0, radius:16, wingAngle:0 };
-  pipes      = []; coins=[]; powerUps=[]; particles=[]; enemies=[]; slashEffects=[]; breathAttacks=[]; superAttacks=[]; pipeBreaks=[];
+  pipes      = []; coins=[]; powerUps=[]; particles=[]; enemies=[]; slashEffects=[]; breathAttacks=[]; superAttacks=[]; pipeBreaks=[]; burnZones=[]; pipeSlowTimer=0; timeDilTimer=0;
   demonsKilled=0; chargeLevel=0; prevGliding=false;
   score=0; lastPipeTime=0; lastEnemyTime=0; currentLevel=0; levelUpTimer=0;
   shieldActive=false; shieldTimer=0; shieldIsSuper=false; flashTimer=0; flashColor='#fff';
@@ -817,6 +820,28 @@ function drawPipeBreaks() {
     ctx.fillStyle=s.color; ctx.fillRect(-s.w/2,-s.h/2,s.w,s.h);
     ctx.fillStyle='rgba(255,255,255,0.18)'; ctx.fillRect(-s.w/2,-s.h/2,s.w,2.5);
     ctx.fillStyle='rgba(0,0,0,0.25)';       ctx.fillRect(-s.w/2, s.h/2-2.5,s.w,2.5);
+    ctx.restore();
+  });
+  ctx.globalAlpha=1;
+}
+
+function drawBurnZones() {
+  burnZones.forEach(z=>{
+    const al=z.life, pn=performance.now();
+    ctx.save();
+    ctx.shadowColor='#ff4400'; ctx.shadowBlur=30;
+    for(let i=0;i<3;i++){
+      const r=z.radius+8+i*16+Math.sin(pn*0.006+i)*6;
+      ctx.globalAlpha=al*(0.35-i*0.09);
+      ctx.strokeStyle=`rgba(255,${90+i*35},0,${al*(0.9-i*0.25)})`;
+      ctx.lineWidth=4-i; ctx.beginPath(); ctx.arc(z.x,z.y,r,0,Math.PI*2); ctx.stroke();
+    }
+    // Random flame flickers inside zone
+    for(let k=0;k<7;k++){
+      const fa=Math.random()*Math.PI*2, fr=Math.random()*z.radius;
+      ctx.globalAlpha=al*0.55; ctx.fillStyle=Math.random()>0.5?'#ffdd00':'#ff6600';
+      ctx.beginPath(); ctx.arc(z.x+Math.cos(fa)*fr,z.y+Math.sin(fa)*fr,2+Math.random()*3.5,0,Math.PI*2); ctx.fill();
+    }
     ctx.restore();
   });
   ctx.globalAlpha=1;
@@ -1203,16 +1228,85 @@ function playSuperSlash() {
   sfx(55,'sawtooth',0.32,0.6,0.02);
 }
 
+function _spawnPipeShards(p) {
+  const col = skyTheme>=3?'#5a1a00':skyTheme>=2?'#3d5a00':'#3dba4e';
+  for(let side=0;side<2;side++){
+    const iy = side===0 ? p.topH-8 : p.topH+pipeGap+8;
+    for(let k=0;k<12;k++){
+      const ang=Math.random()*Math.PI*2, spd=3+Math.random()*7;
+      pipeBreaks.push({x:p.x+PIPE_WIDTH/2+(Math.random()-0.5)*PIPE_WIDTH*0.8, y:iy+(Math.random()-0.5)*16,
+        vx:Math.cos(ang)*spd, vy:Math.sin(ang)*spd-2, w:7+Math.random()*22, h:5+Math.random()*11,
+        rot:Math.random()*Math.PI*2, rotV:(Math.random()-0.5)*0.28, life:1, color:col});
+    }
+  }
+  particles.push({x:p.x+PIPE_WIDTH/2,y:p.topH, vx:0,vy:0,life:1,color:'rgba(200,220,140,0.9)',size:4,type:'ripple',maxSize:42});
+  particles.push({x:p.x+PIPE_WIDTH/2,y:p.topH+pipeGap,vx:0,vy:0,life:1,color:'rgba(200,220,140,0.9)',size:4,type:'ripple',maxSize:42});
+}
+
 function spawnSuperAttack(x, y, birdIdx) {
-  superAttacks.push({ x, y, birdIdx, t:0, life:1, vx:6, hh:H*0.48, hw:100 });
   flashTimer=40; flashColor=SLASH_FLASH[birdIdx];
   shakeTimer=35; shakeAmt=16;
   playSuperSlash();
-  // Burst of particles in all directions
   for(let i=0;i<40;i++){
     const ang=Math.random()*Math.PI*2, spd=3+Math.random()*10;
     particles.push({x, y, vx:Math.cos(ang)*spd, vy:Math.sin(ang)*spd,
       life:1, color:SLASH_FLASH[birdIdx], size:3+Math.random()*6});
+  }
+  switch(birdIdx) {
+    case 0: // Tanjiro — forward torrent, collects coins on the way
+      superAttacks.push({x, y, birdIdx, t:0, life:1, vx:5, hh:H*0.48, hw:80, type:'coin_collect'});
+      break;
+    case 1: // Zenitsu — instant full-screen lightning: kill ALL enemies immediately
+      for(let j=enemies.length-1;j>=0;j--){ spawnSlash(enemies[j].x,enemies[j].y,1); score+=5; demonsKilled++; }
+      enemies=[];
+      superAttacks.push({x:0, y:0, birdIdx, t:0, life:1, vx:0, hh:H, hw:W, type:'flash'});
+      break;
+    case 2: // Inosuke — 5-way fan spread; immediately shatters nearest pipe ahead
+      { const ahead=pipes.filter(p=>p.x>bird.x-30).sort((a,b)=>a.x-b.x);
+        if(ahead.length>0){ _spawnPipeShards(ahead[0]); pipes=pipes.filter(p=>p!==ahead[0]); shakeTimer=20; shakeAmt=12; } }
+      [-0.55,-0.275,0,0.275,0.55].forEach(ang=>{
+        superAttacks.push({x, y, birdIdx, t:0, life:1, vx:9*Math.cos(ang), vy:9*Math.sin(ang), hh:45, hw:55, type:'fan'});
+      });
+      break;
+    case 3: // Rengoku — omni burst + lingering burn zone at bird position
+      burnZones.push({x, y, radius:90, life:1});
+      superAttacks.push({x, y, birdIdx, t:0, life:1, vx:0, hh:H*0.5, hw:H*0.5, type:'omni_burst'});
+      break;
+    case 4: // Shinobu — 3 homing poison darts
+      [-0.3,0,0.3].forEach(ang=>{
+        superAttacks.push({x, y, birdIdx, t:0, life:1, vx:6*Math.cos(ang), vy:6*Math.sin(ang), hh:35, hw:35, type:'homing'});
+      });
+      break;
+    case 5: // Tengen — 3 expanding shockwave rings + slow pipes
+      pipeSlowTimer=150;
+      superAttacks.push({x, y, birdIdx, t:0, life:1, vx:0, hh:0, hw:0, type:'pulse'});
+      break;
+    case 6: // Muichiro — time dilation: all movement 25% speed for 4s
+      timeDilTimer=240;
+      superAttacks.push({x, y, birdIdx, t:0, life:1, vx:2, hh:H*0.48, hw:80, type:'slow_field'});
+      break;
+    case 7: // Mitsuri — sweeping love whip: oscillates vertically, converts demons to coins
+      superAttacks.push({x, y, birdIdx, t:0, life:1, vx:3, hh:55, hw:85, type:'love_sweep', baseY:y});
+      break;
+    case 8: // Giyu — dead calm: shield 2.5s + wipe all current enemies
+      shieldActive=true; shieldTimer=150; shieldIsSuper=false;
+      for(let j=enemies.length-1;j>=0;j--){ spawnSlash(enemies[j].x,enemies[j].y,8); score+=5; demonsKilled++; }
+      enemies=[];
+      superAttacks.push({x:0, y:0, birdIdx, t:0, life:1, vx:0, hh:H, hw:W, type:'dead_calm'});
+      break;
+    case 9: // Gyomei — instantly shatters next 2 pipes ahead, then slow boulder forward
+      { const ahead=pipes.filter(p=>p.x>bird.x-30).sort((a,b)=>a.x-b.x).slice(0,2);
+        ahead.forEach(p=>{ _spawnPipeShards(p); });
+        pipes=pipes.filter(p=>!ahead.includes(p));
+        if(ahead.length>0){ shakeTimer=30; shakeAmt=18; } }
+      superAttacks.push({x, y, birdIdx, t:0, life:1, vx:3, hh:H*0.55, hw:120, type:'boulder'});
+      break;
+    case 10: // Sanemi — tornado: drifts vertically, pulls nearby enemies toward it
+      superAttacks.push({x, y, birdIdx, t:0, life:1, vx:5, vy:0, hh:H*0.5, hw:100, type:'tornado'});
+      break;
+    case 11: // Obanai — sinuous coil: travels forward oscillating, then reverses for a second pass
+      superAttacks.push({x, y, birdIdx, t:0, life:1, vx:5, vy:0, hh:60, hw:80, type:'serpent', phase:'forward', baseY:y});
+      break;
   }
 }
 
@@ -1560,7 +1654,89 @@ function drawBreathAttacks() {
 
 function drawSuperAttacks() {
   superAttacks.forEach(a=>{
-    const al=a.life, t=a.t, R=H*0.24; // half-height radius
+    const al=a.life, t=a.t, R=H*0.24;
+
+    // ── Full-screen / directional types handled separately ──
+    if(a.type==='flash') {
+      // Zenitsu: blinding full-screen lightning
+      ctx.save();
+      ctx.globalAlpha=al*0.65;
+      const bg=ctx.createRadialGradient(W/2,H/2,0,W/2,H/2,H*0.75);
+      bg.addColorStop(0,`rgba(255,255,220,${al*0.85})`); bg.addColorStop(0.5,`rgba(255,220,0,${al*0.4})`); bg.addColorStop(1,'rgba(255,180,0,0)');
+      ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
+      ctx.shadowColor='#ffff00'; ctx.shadowBlur=50;
+      for(let j=0;j<14;j++){
+        const yOff=j*(H/13);
+        ctx.globalAlpha=al*(0.6+Math.sin(j*1.3)*0.25);
+        ctx.strokeStyle=j%2===0?`rgba(255,255,220,${al})`:`rgba(255,210,0,${al*0.7})`;
+        ctx.lineWidth=j%3===0?5:2; ctx.lineCap='round';
+        ctx.beginPath(); ctx.moveTo(0,yOff);
+        for(let x2=0;x2<W;x2+=12) ctx.lineTo(x2,yOff+(Math.random()-0.5)*22);
+        ctx.stroke();
+      }
+      ctx.globalAlpha=al*0.95; ctx.textAlign='center';
+      ctx.font=`bold ${Math.round(H*0.16)}px Arial`; ctx.fillStyle=`rgba(255,255,180,${al})`;
+      ctx.shadowColor='#ffff00'; ctx.shadowBlur=70;
+      ctx.fillText('雷',W/2,H/2+R*0.3);
+      if(al>0.4){ const la=(al-0.4)/0.6; ctx.globalAlpha=la; ctx.textAlign='left';
+        ctx.font='bold 18px Arial'; ctx.fillStyle='#fff'; ctx.shadowColor=SLASH_FLASH[1]; ctx.shadowBlur=18;
+        ctx.fillText(`★ ${SUPER_FORMS[1]}`,10,H*0.6); ctx.font='13px Arial'; ctx.fillStyle=SLASH_FLASH[1];
+        ctx.fillText(SLASH_NAMES[1],10,H*0.6+18); }
+      ctx.restore(); return;
+    }
+    if(a.type==='dead_calm') {
+      // Giyu: still blue wave wash across full screen
+      ctx.save();
+      const bg=ctx.createLinearGradient(0,0,W,0);
+      bg.addColorStop(0,`rgba(30,100,220,${al*0.5})`); bg.addColorStop(0.5,`rgba(80,160,255,${al*0.35})`); bg.addColorStop(1,'rgba(30,100,220,0)');
+      ctx.globalAlpha=al*0.6; ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
+      ctx.shadowColor='#1155cc'; ctx.shadowBlur=20;
+      for(let j=0;j<22;j++){
+        const yy=j*(H/21);
+        ctx.globalAlpha=al*0.55; ctx.strokeStyle=`rgba(100,180,255,${al})`;
+        ctx.lineWidth=1.5; ctx.beginPath(); ctx.moveTo(0,yy); ctx.lineTo(W,yy); ctx.stroke();
+      }
+      // Shield ring around bird
+      ctx.globalAlpha=al*0.7; ctx.strokeStyle='rgba(100,180,255,0.9)'; ctx.lineWidth=4; ctx.shadowBlur=30;
+      ctx.beginPath(); ctx.arc(bird.x,bird.y,bird.radius+22,0,Math.PI*2); ctx.stroke();
+      if(al>0.4){ const la=(al-0.4)/0.6; ctx.globalAlpha=la; ctx.textAlign='left';
+        ctx.font='bold 18px Arial'; ctx.fillStyle='#fff'; ctx.shadowColor=SLASH_FLASH[8]; ctx.shadowBlur=18;
+        ctx.fillText(`★ ${SUPER_FORMS[8]}`,10,H*0.6); ctx.font='13px Arial'; ctx.fillStyle=SLASH_FLASH[8];
+        ctx.fillText(SLASH_NAMES[8],10,H*0.6+18); }
+      ctx.restore(); return;
+    }
+    if(a.type==='fan') {
+      // Inosuke: single directional claw slash
+      const ang=Math.atan2(a.vy,a.vx);
+      ctx.save(); ctx.translate(a.x,a.y); ctx.rotate(ang);
+      ctx.shadowColor='#44ffaa'; ctx.shadowBlur=22;
+      const g=ctx.createLinearGradient(0,0,70,0);
+      g.addColorStop(0,`rgba(100,255,180,${al})`); g.addColorStop(1,'rgba(40,180,100,0)');
+      ctx.strokeStyle=g; ctx.lineWidth=6; ctx.lineCap='round';
+      ctx.globalAlpha=al;
+      ctx.beginPath(); ctx.moveTo(0,-4); ctx.lineTo(65,-4); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0,0);  ctx.lineTo(70,0);  ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0,4);  ctx.lineTo(65,4);  ctx.stroke();
+      ctx.fillStyle=`rgba(180,255,220,${al})`; ctx.beginPath(); ctx.arc(68,0,5,0,Math.PI*2); ctx.fill();
+      ctx.restore(); return;
+    }
+    if(a.type==='homing') {
+      // Shinobu: small homing poison dart with butterfly wings
+      const ang=Math.atan2(a.vy,a.vx);
+      ctx.save(); ctx.translate(a.x,a.y); ctx.rotate(ang);
+      ctx.shadowColor='#cc44ff'; ctx.shadowBlur=16;
+      const g=ctx.createLinearGradient(0,0,55,0);
+      g.addColorStop(0,`rgba(200,100,255,${al})`); g.addColorStop(1,'rgba(140,0,200,0)');
+      ctx.strokeStyle=g; ctx.lineWidth=4; ctx.lineCap='round';
+      ctx.globalAlpha=al;
+      ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(55,0); ctx.stroke();
+      ctx.fillStyle=`rgba(220,130,255,${al*0.7})`;
+      ctx.beginPath(); ctx.ellipse(18,-7,11,5,Math.PI*0.25,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(18,7,11,5,-Math.PI*0.25,0,Math.PI*2); ctx.fill();
+      ctx.restore(); return;
+    }
+
+    // ── Standard per-character draw (translated to a.x, a.y) ──
     ctx.save(); ctx.translate(a.x, a.y);
 
     if (a.birdIdx===0) {
@@ -2668,7 +2844,8 @@ function drawCloud(c) {
 }
 
 function drawGround(scroll) {
-  if(scroll) groundOffset=(groundOffset+pipeSpeed)%40;
+  const _gsm = timeDilTimer>0 ? 0.25 : pipeSlowTimer>0 ? 0.6 : 1;
+  if(scroll) groundOffset=(groundOffset+pipeSpeed*_gsm)%40;
   const gy = H-GROUND_H; // ground top Y
 
   // Dirt base
@@ -2692,7 +2869,7 @@ function drawGround(scroll) {
 
   // ── Ground decorations (parallax scrolling) ──────────────────
   if(groundDecos) groundDecos.forEach(d=>{
-    if(scroll&&gameState==='playing'){ d.x-=pipeSpeed*d.speed; if(d.x<-60) d.x=W+60; }
+    if(scroll&&gameState==='playing'){ d.x-=pipeSpeed*d.speed*_gsm; if(d.x<-60) d.x=W+60; }
 
     if(d.type==='rock'){
       // Layered rock with highlight
@@ -2759,7 +2936,7 @@ function drawGround(scroll) {
 
   // Bushes (drawn last so they're on top)
   if(bushes) bushes.forEach(b=>{
-    if(scroll&&gameState==='playing'){ b.x-=pipeSpeed*0.4; if(b.x+b.size*2<0) b.x=W+b.size; }
+    if(scroll&&gameState==='playing'){ b.x-=pipeSpeed*0.4*_gsm; if(b.x+b.size*2<0) b.x=W+b.size; }
     ctx.fillStyle=skyTheme>=3?'#1a0500':skyTheme>=2?'#330d00':'#3d8b1a';
     ctx.beginPath(); ctx.arc(b.x,gy+2,b.size,Math.PI,0); ctx.fill();
     ctx.fillStyle=skyTheme>=3?'#280800':skyTheme>=2?'#4a1500':'#4da620';
@@ -3204,6 +3381,28 @@ function drawHUD() {
     }
   }
 
+  // Time dilation indicator (Muichiro)
+  if (timeDilTimer>0) {
+    const pct=timeDilTimer/240;
+    ctx.save();
+    ctx.strokeStyle=`rgba(80,220,210,${pct*0.7})`; ctx.lineWidth=6;
+    ctx.shadowColor='#44ddcc'; ctx.shadowBlur=18;
+    ctx.strokeRect(3,3,W-6,H-6);
+    ctx.globalAlpha=pct*0.7; ctx.textAlign='right'; ctx.font='bold 11px Arial';
+    ctx.fillStyle='rgba(80,220,210,0.9)';
+    ctx.fillText(`⏳ ${Math.ceil(timeDilTimer/60)}s`,W-8,18);
+    ctx.restore();
+  }
+  // Pipe-slow indicator (Tengen)
+  if (pipeSlowTimer>0) {
+    const pct=pipeSlowTimer/150;
+    ctx.save();
+    ctx.globalAlpha=pct*0.5; ctx.textAlign='right'; ctx.font='bold 11px Arial';
+    ctx.fillStyle='rgba(255,215,60,0.9)'; ctx.shadowColor='#ffd000'; ctx.shadowBlur=10;
+    ctx.fillText(`♪ ${Math.ceil(pipeSlowTimer/60)}s`,W-8,timeDilTimer>0?32:18);
+    ctx.restore();
+  }
+
   // Shield timer bar
   if (shieldActive) {
     const maxT=shieldIsSuper?450:180, pct=shieldTimer/maxT, bw=100, bh=8, bx=W/2-bw/2, by=88;
@@ -3337,9 +3536,12 @@ function update(now) {
 
   if (now-lastPipeTime>pipeInterval) spawnPipe(now);
 
+  // Speed multiplier (Tengen pipe-slow / Muichiro time-dilation)
+  const _sm = timeDilTimer>0 ? 0.25 : pipeSlowTimer>0 ? 0.6 : 1;
+
   // Update pipes + score
   for (const p of pipes) {
-    p.x-=pipeSpeed;
+    p.x-=pipeSpeed*_sm;
     if (!p.scored && p.x+PIPE_WIDTH<bird.x) {
       p.scored=true; score++;
       // Check level up every 10 points
@@ -3355,14 +3557,14 @@ function update(now) {
   pipes=pipes.filter(p=>p.x+PIPE_WIDTH+15>0);
 
   // Coins
-  coins.forEach(c=>{ c.x-=pipeSpeed; });
+  coins.forEach(c=>{ c.x-=pipeSpeed*_sm; });
   coins.forEach(c=>{
     if(!c.collected){ const dx=c.x-bird.x,dy=c.y-bird.y; if(dx*dx+dy*dy<(bird.radius+10)**2){ c.collected=true; score+=2; playCoin(); flashTimer=8; flashColor='rgb(255,220,0)'; } }
   });
   coins=coins.filter(c=>c.x>-20&&!c.collected);
 
   // Power-ups
-  powerUps.forEach(p=>{ p.x-=pipeSpeed; });
+  powerUps.forEach(p=>{ p.x-=pipeSpeed*_sm; });
   powerUps.forEach(p=>{
     if(!p.collected){ const dx=p.x-bird.x,dy=p.y-bird.y; if(dx*dx+dy*dy<(bird.radius+14)**2){
       p.collected=true; shieldActive=true;
@@ -3375,7 +3577,7 @@ function update(now) {
 
   // Enemies — move, then check contact
   if (now-lastEnemyTime>enemyInterval) spawnEnemy(now);
-  enemies.forEach(e=>{ e.x-=ENEMY_TYPES[e.type].speed*pipeSpeed; });
+  enemies.forEach(e=>{ e.x-=ENEMY_TYPES[e.type].speed*pipeSpeed*_sm; });
   if (!shieldActive) {
     for (let i=enemies.length-1; i>=0; i--) {
       const e=enemies[i];
@@ -3413,18 +3615,97 @@ function update(now) {
     }
   }
 
-  // Super attacks — move + wipe enemies across half-screen height
+  // Super attacks — per-type movement, hit detection, and special effects
   for (let i=superAttacks.length-1; i>=0; i--) {
     const a=superAttacks[i];
-    a.t++; a.x+=a.vx;
-    a.life -= 0.010; // slow fade — lingers impressively
-    if (a.life<=0||a.x>W+200) { superAttacks.splice(i,1); continue; }
-    for (let j=enemies.length-1; j>=0; j--) {
+    a.t++;
+    // ── Movement + decay per type ──
+    switch(a.type) {
+      case 'flash':    a.life-=0.045; break;
+      case 'dead_calm':a.life-=0.028; break;
+      case 'fan':      a.x+=a.vx; a.y+=a.vy; a.life-=0.016; break;
+      case 'homing':
+        a.x+=a.vx; a.y+=a.vy; a.life-=0.012;
+        if(enemies.length>0){
+          let nn=null, nd=Infinity;
+          enemies.forEach(e=>{ const d=Math.hypot(e.x-a.x,e.y-a.y); if(d<nd){nd=d;nn=e;} });
+          if(nn){ const spd=Math.hypot(a.vx,a.vy)||6, ang=Math.atan2(nn.y-a.y,nn.x-a.x);
+            a.vx=a.vx*0.84+Math.cos(ang)*spd*0.16; a.vy=a.vy*0.84+Math.sin(ang)*spd*0.16; }
+        }
+        break;
+      case 'pulse':
+        a.life-=0.006;
+        // Ring-based hit detection: 3 rings expanding outward
+        for(let pn=0;pn<3;pn++){
+          const ringR=a.t*2.8-pn*90; if(ringR<0) continue;
+          for(let j=enemies.length-1;j>=0;j--){
+            const e=enemies[j], d=Math.hypot(e.x-a.x,e.y-a.y);
+            if(Math.abs(d-ringR)<38){ enemies.splice(j,1); demonsKilled++; score+=5;
+              spawnSlash(e.x,e.y,a.birdIdx); playSlash(); flashTimer=6; flashColor=SLASH_FLASH[a.birdIdx]; }
+          }
+        }
+        if(a.t*2.8-2*90>H) a.life=0;
+        continue; // skip standard hit block below
+      case 'omni_burst': a.life-=0.010; break;
+      case 'slow_field': a.x+=a.vx; a.life-=0.006; break;
+      case 'love_sweep':
+        a.x+=a.vx; a.y=a.baseY+Math.sin(a.t*0.07)*H*0.34; a.life-=0.010; break;
+      case 'boulder': a.x+=a.vx; a.life-=0.007; break;
+      case 'tornado':
+        a.x+=a.vx; a.vy+=(Math.random()-0.5)*0.9; a.vy=Math.max(-3,Math.min(3,a.vy));
+        a.y=Math.max(60,Math.min(H-60,a.y+a.vy)); a.life-=0.010;
+        // Pull nearby enemies toward tornado
+        enemies.forEach(e=>{ const d=Math.hypot(e.x-a.x,e.y-a.y);
+          if(d<220&&d>0){ const f=3*(1-d/220); e.x+=(a.x-e.x)/d*f; e.y+=(a.y-e.y)/d*f; } });
+        break;
+      case 'serpent':
+        a.y=a.baseY+Math.sin(a.t*0.06)*H*0.3;
+        if(a.phase==='forward'){ a.x+=a.vx; if(a.x>W+60){a.phase='reverse';a.vx=-6;} }
+        else { a.x+=a.vx; if(a.x<-60) a.life=0; }
+        a.life-=0.005; break;
+      case 'coin_collect':
+      default:
+        a.x+=a.vx; a.life-=0.009;
+        // Tanjiro: sweep up coins along path
+        for(let ci=coins.length-1;ci>=0;ci--){
+          const c=coins[ci];
+          if(!c.collected&&Math.abs(c.x-a.x)<a.hw+20&&Math.abs(c.y-a.y)<a.hh){
+            c.collected=true; score+=2; playCoin(); }
+        }
+        break;
+    }
+    if(a.life<=0){ superAttacks.splice(i,1); continue; }
+    if(a.type!=='serpent'&&a.type!=='pulse'&&a.x>W+200){ superAttacks.splice(i,1); continue; }
+    // ── Enemy hit detection (all types except pulse, handled above) ──
+    for(let j=enemies.length-1;j>=0;j--){
       const e=enemies[j];
-      if (Math.abs(a.x-e.x)<a.hw+e.hw && Math.abs(a.y-e.y)<a.hh) {
+      const hit = a.type==='omni_burst'
+        ? Math.hypot(e.x-a.x,e.y-a.y)<a.hh
+        : Math.abs(a.x-e.x)<a.hw+e.hw && Math.abs(a.y-e.y)<a.hh+e.hh;
+      if(hit){
+        if(a.type==='love_sweep'){
+          // Convert demon to bonus coin instead of killing
+          coins.push({x:e.x, y:e.y, collected:false, t:0});
+          score+=2; playCoin();
+        } else {
+          demonsKilled++; score+=5;
+          spawnSlash(e.x,e.y,a.birdIdx); playSlash();
+          flashTimer=6; flashColor=SLASH_FLASH[a.birdIdx];
+        }
+        enemies.splice(j,1);
+      }
+    }
+  }
+
+  // Burn zones (Rengoku lingering fire — kills demons that enter)
+  for(let zi=burnZones.length-1;zi>=0;zi--){
+    const z=burnZones[zi]; z.life-=0.004;
+    if(z.life<=0){burnZones.splice(zi,1);continue;}
+    for(let j=enemies.length-1;j>=0;j--){
+      const e=enemies[j];
+      if(Math.hypot(e.x-z.x,e.y-z.y)<z.radius+e.hw){
         enemies.splice(j,1); demonsKilled++; score+=5;
-        spawnSlash(e.x, e.y, a.birdIdx); playSlash();
-        flashTimer=6; flashColor=SLASH_FLASH[a.birdIdx];
+        spawnSlash(e.x,e.y,3); playSlash(); flashTimer=6; flashColor=SLASH_FLASH[3];
       }
     }
   }
@@ -3433,6 +3714,8 @@ function update(now) {
   pipeBreaks.forEach(s=>{ s.x+=s.vx; s.y+=s.vy; s.vy+=0.28; s.vx*=0.97; s.rot+=s.rotV; s.life-=0.025; });
   pipeBreaks=pipeBreaks.filter(s=>s.life>0);
   if (shakeTimer>0) shakeTimer--;
+  if (pipeSlowTimer>0) pipeSlowTimer--;
+  if (timeDilTimer>0) timeDilTimer--;
 
   emitTrail(BIRD_DEFS[selectedBird]);
   updateParticles();
@@ -3471,6 +3754,7 @@ function loop(now) {
     powerUps.forEach(drawPowerUp);
     enemies.forEach(drawEnemy);
     drawBreathAttacks();
+    drawBurnZones();
     drawSuperAttacks();
     drawSlashEffects();
     drawPipeBreaks();
@@ -3491,7 +3775,7 @@ function loop(now) {
 
 // ── Boot
 bird = { x:W*0.2, y:H/2, vy:0, radius:16, wingAngle:0 };
-particles=[]; coins=[]; powerUps=[]; enemies=[]; slashEffects=[]; breathAttacks=[]; superAttacks=[]; pipeBreaks=[];
+particles=[]; coins=[]; powerUps=[]; enemies=[]; slashEffects=[]; breathAttacks=[]; superAttacks=[]; pipeBreaks=[]; burnZones=[]; pipeSlowTimer=0; timeDilTimer=0;
 demonsKilled=0; chargeLevel=0; currentLevel=0; lastEnemyTime=0; shakeTimer=0;
 requestAnimationFrame(loop);
 </script>
