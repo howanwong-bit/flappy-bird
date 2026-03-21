@@ -3565,8 +3565,8 @@ function update(now) {
   }
   if (gliding) {
     // Time-based charge: rates in 1/ms so charge time is device-framerate-independent
-    // [2s,2.5s,2.5s,2.5s,2s,2.5s,2.5s,2s,2.5s,2.5s,2.5s,2.5s]
-    chargeLevel = Math.min(1, chargeLevel + [0.0005,0.0004,0.0004,0.0004,0.0005,0.0004,0.0004,0.0005,0.0004,0.0004,0.0004,0.0004][selectedBird] * _physDt);
+    // [1s,1.5s,1.5s,1.5s,1s,1.5s,1.5s,1s,1.5s,1.5s,1.5s,1.5s]
+    chargeLevel = Math.min(1, chargeLevel + [0.001,0.000667,0.000667,0.000667,0.001,0.000667,0.000667,0.001,0.000667,0.000667,0.000667,0.000667][selectedBird] * _physDt);
     bird.vy = Math.min(bird.vy + GLIDE_GRAV, GLIDE_MAX_VY);
     bird.wingAngle += 0.06;
   } else {
