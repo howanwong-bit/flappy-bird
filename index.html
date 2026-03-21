@@ -135,6 +135,56 @@ let selectedSize = 'medium';
 let W = 820, H = 680;
 
 // ────────────────────────────────────────────────
+//  Global leaderboard — Firebase Realtime Database
+//  HOW TO SET UP (one time):
+//  1. Go to https://console.firebase.google.com
+//  2. Create a project → Build → Realtime Database → Create database
+//  3. Choose "Start in test mode" (allows public read/write)
+//  4. Copy your database URL (e.g. https://your-project-default-rtdb.firebaseio.com)
+//  5. Paste it below replacing the empty string
+// ────────────────────────────────────────────────
+const FIREBASE_URL = '';  // ← paste your Firebase Realtime Database URL here
+
+let globalScores = null;   // null = not yet loaded, [] = loaded (may be empty)
+let globalScoresLoading = false;
+
+async function fetchGlobalScores() {
+  if (!FIREBASE_URL) return;
+  globalScoresLoading = true;
+  try {
+    const res = await fetch(`${FIREBASE_URL}/scores.json`);
+    const data = await res.json();
+    if (data && typeof data === 'object') {
+      const arr = Object.values(data)
+        .filter(e => e && typeof e.score === 'number')
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 25);
+      globalScores = arr;
+      // also cache locally so leaderboard works offline
+      localStorage.setItem('flappyDSScoresGlobal', JSON.stringify(arr));
+    } else {
+      globalScores = [];
+    }
+  } catch { globalScores = []; }
+  globalScoresLoading = false;
+}
+
+async function pushGlobalScore(entry) {
+  if (!FIREBASE_URL) return;
+  try {
+    await fetch(`${FIREBASE_URL}/scores.json`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(entry),
+    });
+    fetchGlobalScores(); // refresh
+  } catch { /* offline — local save still happened */ }
+}
+
+// Pre-load global scores on page load
+fetchGlobalScores();
+
+// ────────────────────────────────────────────────
 //  Bird definitions — Demon Slayer inspired styles
 // ────────────────────────────────────────────────
 const BIRD_DEFS = [
@@ -601,12 +651,25 @@ function stopMusic() { musicOn=false; clearTimeout(melTimer); }
 // ────────────────────────────────────────────────
 //  Leaderboard
 // ────────────────────────────────────────────────
-function getScores() { try { return JSON.parse(localStorage.getItem('flappyDSScores')||'[]'); } catch { return []; } }
+function getLocalScores() { try { return JSON.parse(localStorage.getItem('flappyDSScores')||'[]'); } catch { return []; } }
+function getScores() {
+  // Return global scores if available, else local, else cached global
+  if (globalScores) return globalScores;
+  try { const c=JSON.parse(localStorage.getItem('flappyDSScoresGlobal')||'null'); if(c) return c; } catch {}
+  return getLocalScores();
+}
+function isGlobalLeaderboard() {
+  return !!(FIREBASE_URL && (globalScores || localStorage.getItem('flappyDSScoresGlobal')));
+}
 function saveScore(name, sc, diff, stage) {
-  let s=getScores();
-  s.push({ name:(name||'').trim()||'Anonymous', score:sc, diff, stage, date:new Date().toLocaleDateString() });
+  // Always save to local storage
+  let s=getLocalScores();
+  const entry={ name:(name||'').trim()||'Anonymous', score:sc, diff, stage, date:new Date().toLocaleDateString() };
+  s.push(entry);
   s.sort((a,b)=>b.score-a.score);
   localStorage.setItem('flappyDSScores', JSON.stringify(s.slice(0,10)));
+  // Also push to global leaderboard
+  pushGlobalScore(entry);
 }
 
 // ────────────────────────────────────────────────
@@ -619,7 +682,7 @@ function showNameOverlay() {
   setTimeout(()=>nameInp.focus(),50);
 }
 function hideNameOverlay() { nameOvr.style.display='none'; }
-function submitScore() { saveScore(nameInp.value, score, selectedDiff, currentLevel+1); hideNameOverlay(); gameState='leaderboard'; }
+function submitScore() { saveScore(nameInp.value, score, selectedDiff, currentLevel+1); hideNameOverlay(); gameState='leaderboard'; fetchGlobalScores(); }
 saveBtn.addEventListener('click', submitScore);
 skipBtn.addEventListener('click', ()=>{ hideNameOverlay(); gameState='leaderboard'; });
 nameInp.addEventListener('keydown', e=>{ if(e.key==='Enter') submitScore(); });
@@ -2481,7 +2544,7 @@ function handleSelectClick(mx,my) {
   for(let i=0;i<12;i++) if(inRect(mx,my,getBirdRect(i))){ selectedBird=i; return; }
   DIFF_KEYS.forEach((k,i)=>{ if(inRect(mx,my,getDiffRect(i))) selectedDiff=k; });
   if(inRect(mx,my,getPlayRect())){ demoMode=false; initGame(); gameState='waiting'; startMusic(); return; }
-  if(inRect(mx,my,getLeadRect())){ gameState='leaderboard'; return; }
+  if(inRect(mx,my,getLeadRect())){ gameState='leaderboard'; fetchGlobalScores(); return; }
   if(inRect(mx,my,getDemoRect())){ demoMode=true; initGame(); gameState='waiting'; startMusic(); return; }
 }
 
@@ -3009,7 +3072,7 @@ function drawSelectScreen() {
 
   // Version — bottom right
   ctx.font='11px Arial'; ctx.fillStyle='rgba(150,100,220,0.35)'; ctx.textAlign='right';
-  ctx.fillText('v1.2.0', W-10, H-8);
+  ctx.fillText('v1.3.0', W-10, H-8);
 }
 
 // ────────────────────────────────────────────────
@@ -3027,7 +3090,18 @@ function drawLeaderboard() {
   ctx.fillText('🏆 Hall of Slayers', W/2, 52);
   ctx.shadowBlur=0;
 
-  const scores=getScores(), px=W*0.04, pw=W*0.92, rowH=Math.min(40,(H-130)/11), startY=72;
+  // Global / local badge
+  const isGlobal = isGlobalLeaderboard();
+  ctx.font='12px Arial'; ctx.textAlign='center';
+  if (globalScoresLoading) {
+    ctx.fillStyle='rgba(200,200,200,0.5)'; ctx.fillText('⏳ Loading global scores…', W/2, 68);
+  } else if (isGlobal) {
+    ctx.fillStyle='rgba(100,220,255,0.75)'; ctx.fillText('🌐 Global Leaderboard', W/2, 68);
+  } else {
+    ctx.fillStyle='rgba(200,180,255,0.5)'; ctx.fillText('📱 Local scores · Set up Firebase for global leaderboard', W/2, 68);
+  }
+
+  const scores=getScores(), px=W*0.04, pw=W*0.92, rowH=Math.min(38,(H-140)/12), startY=78;
   const cols={rank:px+pw*0.05,score:px+pw*0.20,name:px+pw*0.50,diff:px+pw*0.72,stage:px+pw*0.87,date:px+pw*0.97};
 
   if(!scores.length){
@@ -3364,7 +3438,12 @@ function update(now) {
 // ────────────────────────────────────────────────
 //  Main loop
 // ────────────────────────────────────────────────
+const FRAME_MS = 1000 / 60; // lock physics to 60 fps
+let _lastFrameTime = 0;
 function loop(now) {
+  const elapsed = now - _lastFrameTime;
+  if (elapsed < FRAME_MS - 1) { requestAnimationFrame(loop); return; }
+  _lastFrameTime = now - (elapsed % FRAME_MS);
   ctx.clearRect(0,0,W,H);
 
   if (gameState==='select') {
