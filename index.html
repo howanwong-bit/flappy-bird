@@ -2580,7 +2580,7 @@ canvas.addEventListener('touchstart',e=>{
   const r=canvas.getBoundingClientRect();
   const t=e.touches[0];
   const tx=(t.clientX-r.left)*(W/r.width), ty=(t.clientY-r.top)*(H/r.height);
-  if(tx < W*0.30 && ty < H*0.30 && gameState==='playing') { invincible=!invincible; }
+  if(tx < W*0.10 && ty < H*0.10 && gameState==='playing') { invincible=!invincible; }
   if(demoMode){ demoMode=false; inputHeld=false; gameState='select'; return; }
   if(gameState==='select')      { const {mx,my}=getTouch(e); handleSelectClick(mx,my); return; }
   if(gameState==='leaderboard') { gameState='select'; return; }
