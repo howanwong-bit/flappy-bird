@@ -3538,7 +3538,12 @@ function update(now) {
 
   if (shieldActive) { shieldTimer--; if(shieldTimer<=0){shieldActive=false; shieldIsSuper=false;} }
 
-  if (now-lastPipeTime>pipeInterval) spawnPipe(now);
+  // Scale spawn interval with speed so pipes don't cluster during slowdowns
+  const _spawnSm = timeDilTimer>0 ? 0.25 : pipeSlowTimer>0 ? 0.5 : 1;
+  const _minPipeGap = pipeInterval / _spawnSm;
+  // Also guard minimum horizontal pixel spacing between pipes
+  const _lastPipeX = pipes.length ? Math.max(...pipes.map(p=>p.x)) : -Infinity;
+  if (now-lastPipeTime > _minPipeGap && W - _lastPipeX > PIPE_WIDTH + 140) spawnPipe(now);
 
   // Speed multiplier (Tengen pipe-slow / Muichiro time-dilation)
   const _sm = timeDilTimer>0 ? 0.25 : pipeSlowTimer>0 ? 0.5 : 1;
