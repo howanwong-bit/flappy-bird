@@ -16,6 +16,10 @@ Each character has a unique visual style, elemental trail, ambient aura, exclusi
 | Tengen | Sound | Sound rings + gem sparks | Fourth Form: Constant Resounding Slashes | Sound Breathing: String Performance |
 | Muichiro | Mist | Slow mist wisps | Seventh Form: Obscuring Clouds | Mist Breathing: Sea of Clouds and Haze |
 | Mitsuri | Love | Pink petals | Sixth Form: Cat-legged Winds of Love | Love Breathing: Swaying Love Wildly |
+| Giyu | Water | Deep blue droplets + still ripples | Eleventh Form: Dead Calm | Water Breathing: Flowing Dead Calm |
+| Gyomei | Stone | Stone chunks | Fifth Form: Arcs of Justice | Stone Breathing: Volcanic Rock Rapid Conquest |
+| Sanemi | Wind | Sharp wind slashes | Ninth Form: Idaten Typhoon | Wind Breathing: Slashing Tornado |
+| Obanai | Serpent | Serpentine green sparks | Fifth Form: Slithering Serpent | Serpent Breathing: Coiling Serpent Slash |
 
 ## Enemies
 
