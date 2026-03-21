@@ -3564,7 +3564,9 @@ function update(now) {
     chargeLevel = 0;
   }
   if (gliding) {
-    chargeLevel = Math.min(1, chargeLevel + [0.00833,0.00667,0.00667,0.00667,0.00833,0.00667,0.00667,0.00833,0.00667,0.00667,0.00667,0.00667][selectedBird]);
+    // Time-based charge: rates in 1/ms so charge time is device-framerate-independent
+    // [2s,2.5s,2.5s,2.5s,2s,2.5s,2.5s,2s,2.5s,2.5s,2.5s,2.5s]
+    chargeLevel = Math.min(1, chargeLevel + [0.0005,0.0004,0.0004,0.0004,0.0005,0.0004,0.0004,0.0005,0.0004,0.0004,0.0004,0.0004][selectedBird] * _physDt);
     bird.vy = Math.min(bird.vy + GLIDE_GRAV, GLIDE_MAX_VY);
     bird.wingAngle += 0.06;
   } else {
@@ -3796,9 +3798,11 @@ function update(now) {
 // ────────────────────────────────────────────────
 const FRAME_MS = 1000 / 60; // lock physics to 60 fps
 let _lastFrameTime = 0;
+let _physDt = FRAME_MS; // actual ms since last physics step (for time-based increments)
 function loop(now) {
   const elapsed = now - _lastFrameTime;
   if (elapsed < FRAME_MS - 1) { requestAnimationFrame(loop); return; }
+  _physDt = Math.min(elapsed, FRAME_MS * 2); // cap at 2 frames to avoid post-tab-switch spikes
   _lastFrameTime = now - (elapsed % FRAME_MS);
   ctx.clearRect(0,0,W,H);
 
