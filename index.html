@@ -1251,11 +1251,11 @@ canvas.addEventListener('mouseup', ()=>{ inputHeld=false; });
 // ── touch: press = jump, hold = arm glide
 canvas.addEventListener('touchstart',e=>{
   e.preventDefault();
-  // Secret: touch top-left corner (15% of canvas) = invincible mode
+  // Secret: tap top-left corner to toggle invincible mode
   const r=canvas.getBoundingClientRect();
   const t=e.touches[0];
   const tx=(t.clientX-r.left)*(W/r.width), ty=(t.clientY-r.top)*(H/r.height);
-  if(tx < W*0.30 && ty < H*0.30 && gameState==='playing') { invincible=true; return; }
+  if(tx < W*0.30 && ty < H*0.30 && gameState==='playing') { invincible=!invincible; }
   if(demoMode){ demoMode=false; inputHeld=false; gameState='select'; return; }
   if(gameState==='select')      { const {mx,my}=getTouch(e); handleSelectClick(mx,my); return; }
   if(gameState==='leaderboard') { gameState='select'; return; }
@@ -1265,7 +1265,6 @@ canvas.addEventListener('touchstart',e=>{
 },{passive:false});
 canvas.addEventListener('touchend', e=>{
   e.preventDefault();
-  invincible=false;
   if(e.touches.length === 0) inputHeld=false;
 },{passive:false});
 
