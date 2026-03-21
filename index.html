@@ -1686,6 +1686,10 @@ function drawSelectScreen() {
 
   ctx.font='12px Arial'; ctx.fillStyle='rgba(180,130,255,0.45)'; ctx.textAlign='center';
   ctx.fillText(isMobile ? 'Tap to jump · Hold to glide & charge · Release to attack' : 'Hold Space / Hold Tap to glide · Release to fall', W/2, H-14);
+
+  // Version — bottom right
+  ctx.font='11px Arial'; ctx.fillStyle='rgba(150,100,220,0.35)'; ctx.textAlign='right';
+  ctx.fillText('v1.0.0', W-10, H-8);
 }
 
 // ────────────────────────────────────────────────
