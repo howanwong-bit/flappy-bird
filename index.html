@@ -3522,12 +3522,12 @@ function update(now) {
 
   // Glide → release: full charge = super attack, otherwise normal breath
   if (prevGliding && !gliding) {
-    if (chargeLevel >= 0.999 && superCooldown <= 0) { spawnSuperAttack(bird.x+bird.radius, bird.y, selectedBird); superCooldown=[180,480,420,360,240,300,480,180,420,540,240,240][selectedBird]; }
+    if (chargeLevel >= 0.999 && superCooldown <= 0) { spawnSuperAttack(bird.x+bird.radius, bird.y, selectedBird); superCooldown=[240,510,390,360,300,330,510,240,390,570,300,300][selectedBird]; }
     else if (chargeLevel > 0.05) spawnBreathAttack(bird.x+bird.radius, bird.y, selectedBird, chargeLevel);
     chargeLevel = 0;
   }
   if (gliding) {
-    chargeLevel = Math.min(1, chargeLevel + 0.016);
+    chargeLevel = Math.min(1, chargeLevel + [0.00833,0.00667,0.00667,0.00667,0.00833,0.00667,0.00667,0.00833,0.00667,0.00667,0.00667,0.00667][selectedBird]);
     bird.vy = Math.min(bird.vy + GLIDE_GRAV, GLIDE_MAX_VY);
     bird.wingAngle += 0.06;
   } else {
