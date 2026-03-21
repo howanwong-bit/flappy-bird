@@ -26,6 +26,8 @@
       display: block;
       cursor: pointer;
       touch-action: none;
+      max-width: calc(100vw - 8px);
+      max-height: calc(100vh - 8px);
     }
     #portrait-warn {
       display: none;
@@ -317,34 +319,27 @@ applySize('medium');
 // ────────────────────────────────────────────────
 //  Mobile detection & scaling
 // ────────────────────────────────────────────────
+// Detect by touch capability + small screen — no UA sniffing needed
 const isMobile = ('ontouchstart' in window || navigator.maxTouchPoints > 1)
-  && /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+                 && Math.min(screen.width, screen.height) <= 900;
 
-const portraitWarn = document.getElementById('portrait-warn');
+document.getElementById('portrait-warn').style.display = 'none'; // never block portrait
 
 function scaleMobileCanvas() {
+  if (!isMobile) return;
+  // Fit canvas inside the viewport in any orientation, with small padding
   const vw = window.innerWidth, vh = window.innerHeight;
-  const isPortrait = vw < vh;
-  portraitWarn.style.display = (isMobile && isPortrait) ? 'flex' : 'none';
-  if (isMobile && !isPortrait) {
-    const scale = Math.min((vw - 8) / W, (vh - 8) / H);
-    canvas.style.width  = Math.round(W * scale) + 'px';
-    canvas.style.height = Math.round(H * scale) + 'px';
-  } else if (!isMobile) {
-    canvas.style.width = ''; canvas.style.height = '';
-  }
+  const scale = Math.min((vw - 8) / W, (vh - 8) / H);
+  canvas.style.width  = Math.round(W * scale) + 'px';
+  canvas.style.height = Math.round(H * scale) + 'px';
 }
 
 if (isMobile) {
-  // Pick best base resolution for the device's long side
-  const longSide = Math.max(window.innerWidth, window.innerHeight);
-  if      (longSide >= 1000) applySize('large');
-  else if (longSide >=  720) applySize('medium');
-  else                        applySize('small');
+  applySize('small'); // 560×560 — scales cleanly to any phone screen
   scaleMobileCanvas();
 }
-window.addEventListener('resize',            () => { if (isMobile) scaleMobileCanvas(); });
-window.addEventListener('orientationchange', () => { setTimeout(scaleMobileCanvas, 250); });
+window.addEventListener('resize',            scaleMobileCanvas);
+window.addEventListener('orientationchange', () => setTimeout(scaleMobileCanvas, 250));
 
 // ────────────────────────────────────────────────
 //  Audio (original A-minor dramatic action score)
