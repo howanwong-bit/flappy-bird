@@ -1271,7 +1271,7 @@ function spawnSuperAttack(x, y, birdIdx) {
       break;
     case 3: // Rengoku — omni burst + lingering burn zone at bird position
       burnZones.push({x, y, radius:90, life:1});
-      superAttacks.push({x, y, birdIdx, t:0, life:1, vx:0, hh:H*0.5, hw:H*0.5, type:'omni_burst'});
+      superAttacks.push({x, y, birdIdx, t:0, life:1, vx:5, hh:H*0.5, hw:H*0.5, type:'omni_burst'});
       break;
     case 4: // Shinobu — 3 homing poison darts
       [-0.3,0,0.3].forEach(ang=>{
@@ -3522,7 +3522,7 @@ function update(now) {
 
   // Glide → release: full charge = super attack, otherwise normal breath
   if (prevGliding && !gliding) {
-    if (chargeLevel >= 0.999 && superCooldown <= 0) { spawnSuperAttack(bird.x+bird.radius, bird.y, selectedBird); superCooldown=300; }
+    if (chargeLevel >= 0.999 && superCooldown <= 0) { spawnSuperAttack(bird.x+bird.radius, bird.y, selectedBird); superCooldown=[180,480,420,360,240,300,480,180,420,540,240,240][selectedBird]; }
     else if (chargeLevel > 0.05) spawnBreathAttack(bird.x+bird.radius, bird.y, selectedBird, chargeLevel);
     chargeLevel = 0;
   }
