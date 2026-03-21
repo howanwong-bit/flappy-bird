@@ -484,6 +484,11 @@ const SLASH_NAMES  = ['水の呼吸','雷の呼吸','獣の呼吸','炎の呼吸
 const SLASH_LABELS = ['Water Breathing','Thunder Breathing','Beast Breathing','Flame Breathing','Insect Breathing','Sound Breathing','Mist Breathing','Love Breathing','Water Breathing','Stone Breathing','Wind Breathing','Serpent Breathing'];
 const BREATH_FORMS = ['Tenth Form: Constant Flux','First Form: Thunderclap Flash','Seventh Fang: Spatial Awareness','Ninth Form: Rengoku','Dance of the Butterfly God','Fourth Form: Constant Resounding Slashes','Seventh Form: Obscuring Clouds','Sixth Form: Cat-legged Winds of Love','Eleventh Form: Dead Calm','Fifth Form: Arcs of Justice','Ninth Form: Idaten Typhoon','Fifth Form: Slithering Serpent'];
 const SUPER_FORMS  = ['Total Concentration: Raging Torrent','God Speed: Heaven\'s Thunder','Beast Rampage: Primal Fury','Flame Breathing: Purgatory','Insect Breathing: Compound Eye Hexagon','Sound Breathing: String Performance','Mist Breathing: Sea of Clouds and Haze','Love Breathing: Swaying Love Wildly','Water Breathing: Flowing Dead Calm','Stone Breathing: Volcanic Rock Rapid Conquest','Wind Breathing: Slashing Tornado','Serpent Breathing: Coiling Serpent Slash'];
+const SUPER_EFFECTS= ['Forward torrent sweeps up all coins on screen','Instant full-screen lightning kills every enemy','5-way fan spread + shatters nearest pipe','Fireball travels right + ~4s burn zone','3 homing darts curve toward nearest enemies','3 shockwaves + slows all movement 50% for 3s','Time dilation — everything at 25% speed for 4s','Whip sweep converts demons into bonus coins','Instant 2.5s shield + wipes all enemies','Shatters next 2 pipes ahead + slow boulder','Drifting tornado pulls nearby enemies into path','Sinuous double-pass coil collects coins & shields'];
+const SUPER_CHARGE_S=[1,1.5,1.5,1.5,1,1.5,1.5,1,1.5,1.5,1.5,1.5];
+const SUPER_CD_S   =[4,8.5,6.5,6,5,5.5,8.5,4,6.5,9.5,5,5];
+const SUPER_KANJI  =['水','雷','獣','炎','虫','音','霞','恋','水','岩','風','蛇'];
+let abilitiesPage  = 0;
 let score, lastPipeTime, currentLevel, levelUpTimer;
 let pipeSpeed, pipeGap, pipeInterval;
 let shieldActive, shieldTimer, shieldIsSuper, flashTimer, flashColor;
@@ -1271,10 +1276,12 @@ function spawnSuperAttack(x, y, birdIdx) {
         superAttacks.push({x, y, birdIdx, t:0, life:1, vx:9*Math.cos(ang), vy:9*Math.sin(ang), hh:45, hw:55, type:'fan'});
       });
       break;
-    case 3: // Rengoku — omni burst + lingering burn zone at bird position
-      burnZones.push({x, y, radius:90, life:1});
-      superAttacks.push({x, y, birdIdx, t:0, life:1, vx:5, hh:H*0.5, hw:H*0.5, type:'omni_burst'});
+    case 3: { // Rengoku — omni burst + lingering burn zone at right edge
+      const rx=W-80;
+      burnZones.push({x:rx, y, radius:90, life:1});
+      superAttacks.push({x:rx, y, birdIdx, t:0, life:1, vx:0, hh:H*0.5, hw:H*0.5, type:'omni_burst'});
       break;
+    }
     case 4: // Shinobu — 3 homing poison darts
       [-0.3,0,0.3].forEach(ang=>{
         superAttacks.push({x, y, birdIdx, t:0, life:1, vx:6*Math.cos(ang), vy:6*Math.sin(ang), hh:35, hw:35, type:'homing'});
@@ -2708,7 +2715,8 @@ function getBirdGridBottom() { return _menuLayout().gridBottom; }
 function getDiffRect(i)  { const gb=getBirdGridBottom(), dw=Math.min(108,(W-60)/3-8),dh=34,gap=Math.min(12,(W-3*dw-40)/2),tot=3*dw+2*gap; return {x:(W-tot)/2+i*(dw+gap),y:gb+16,w:dw,h:dh}; }
 function getPlayRect()   { const gb=getBirdGridBottom(); return {x:W/2-165,y:gb+60,w:150,h:42}; }
 function getLeadRect()   { const gb=getBirdGridBottom(); return {x:W/2+15, y:gb+60,w:150,h:42}; }
-function getDemoRect()   { const gb=getBirdGridBottom(); return {x:W/2-80, y:gb+110,w:160,h:28}; }
+function getDemoRect()      { const gb=getBirdGridBottom(); return {x:W/2-90, y:gb+110,w:130,h:28}; }
+function getAbilitiesRect() { const gb=getBirdGridBottom(); return {x:W/2+50, y:gb+110,w:130,h:28}; }
 function inRect(mx,my,r) { return mx>r.x&&mx<r.x+r.w&&my>r.y&&my<r.y+r.h; }
 
 // ────────────────────────────────────────────────
@@ -2734,6 +2742,7 @@ function handleSelectClick(mx,my) {
   if(inRect(mx,my,getPlayRect())){ demoMode=false; initGame(); gameState='waiting'; startMusic(); return; }
   if(inRect(mx,my,getLeadRect())){ gameState='leaderboard'; fetchGlobalScores(); return; }
   if(inRect(mx,my,getDemoRect())){ demoMode=true; initGame(); gameState='waiting'; startMusic(); return; }
+  if(inRect(mx,my,getAbilitiesRect())){ abilitiesPage=0; gameState='abilities'; return; }
 }
 
 // ── click: menus + dead-with-score redirect only
@@ -2741,6 +2750,7 @@ canvas.addEventListener('click',e=>{
   if(demoMode){ demoMode=false; inputHeld=false; gameState='select'; return; }
   const {mx,my}=getMouse(e);
   if(gameState==='select')      { handleSelectClick(mx,my); return; }
+  if(gameState==='abilities')   { handleAbilitiesClick(mx,my); return; }
   if(gameState==='leaderboard') { gameState='select'; return; }
   if(gameState==='dead')        { if(score===0) gameState='select'; return; }
 });
@@ -2762,6 +2772,7 @@ canvas.addEventListener('touchstart',e=>{
   if(Math.abs(tx - W/2) < W*0.15 && ty < 80 && gameState==='playing') { invincible=!invincible; }
   if(demoMode){ demoMode=false; inputHeld=false; gameState='select'; return; }
   if(gameState==='select')      { const {mx,my}=getTouch(e); handleSelectClick(mx,my); return; }
+  if(gameState==='abilities')   { const {mx,my}=getTouch(e); handleAbilitiesClick(mx,my); return; }
   if(gameState==='leaderboard') { gameState='select'; return; }
   if(gameState==='dead')        { if(score===0) gameState='select'; return; }
   if(gameState==='waiting') { jump(); inputHeld=true; return; }
@@ -2777,7 +2788,7 @@ document.addEventListener('keydown',e=>{
   if(demoMode && e.code!=='Backspace'){ demoMode=false; inputHeld=false; gameState='select'; return; }
   if(e.code!=='Space') return;
   e.preventDefault();
-  if(gameState==='leaderboard'||(gameState==='dead'&&score===0)){ gameState='select'; return; }
+  if(gameState==='leaderboard'||gameState==='abilities'||(gameState==='dead'&&score===0)){ gameState='select'; return; }
   if(gameState==='waiting') { jump(); inputHeld=true; return; }
   if(gameState==='playing') { if(!e.repeat) jump(); inputHeld=true; }
 });
@@ -3032,7 +3043,7 @@ function drawBirdAt(x, y, def, angle, wingAngle, scale=1) {
   // shield aura
   if (shieldActive && scale===1) {
     const sa=0.4+0.3*Math.abs(Math.sin(shieldTimer*0.1));
-    ctx.fillStyle=shieldIsSuper?`rgba(255,200,0,${sa})`:`rgba(80,160,255,${sa})`;
+    ctx.fillStyle=`rgba(80,160,255,${sa})`;
     ctx.beginPath(); ctx.arc(0,0,R+8,0,Math.PI*2); ctx.fill();
     if (shieldIsSuper) {
       ctx.strokeStyle=`rgba(255,230,80,${sa+0.2})`; ctx.lineWidth=2;
@@ -3179,6 +3190,110 @@ function secLabel(text, y) {
   ctx.beginPath(); ctx.moveTo(W/2-tw/2-14,y+4); ctx.lineTo(W/2+tw/2+14,y+4); ctx.stroke();
 }
 
+function handleAbilitiesClick(mx,my) {
+  const navY=H-38;
+  if(mx>10&&mx<100&&my>navY&&my<navY+28){ gameState='select'; return; }
+  if(abilitiesPage>0&&mx>W-220&&mx<W-120&&my>navY&&my<navY+28){ abilitiesPage--; return; }
+  if(abilitiesPage<1&&mx>W-110&&mx<W-10&&my>navY&&my<navY+28){ abilitiesPage++; return; }
+}
+
+function drawAbilities() {
+  const bg=ctx.createLinearGradient(0,0,0,H);
+  bg.addColorStop(0,'#0a0015'); bg.addColorStop(1,'#1a0035');
+  ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
+  drawStars();
+
+  // Header
+  ctx.textAlign='center';
+  ctx.font=`bold ${Math.round(W*0.046)}px Arial`;
+  ctx.fillStyle='#ff4444'; ctx.shadowColor='rgba(255,50,50,0.7)'; ctx.shadowBlur=16;
+  ctx.fillText('★ Hashira Abilities', W/2, 40);
+  ctx.shadowBlur=0;
+  ctx.font='11px Arial'; ctx.fillStyle='rgba(180,130,255,0.6)';
+  ctx.fillText(`Page ${abilitiesPage+1} / 2  —  Space or ← Back to return`, W/2, 56);
+
+  // Card grid: 2 cols × 3 rows = 6 per page
+  const cols=2, rows=3, pad=10, headerH=64, navH=44;
+  const cardW=Math.floor((W-pad*(cols+1))/cols);
+  const cardH=Math.floor((H-headerH-navH-pad*(rows))/rows);
+  const startIdx=abilitiesPage*6;
+
+  for(let i=0;i<6;i++){
+    const idx=startIdx+i; if(idx>=12) break;
+    const col=i%cols, row=Math.floor(i/cols);
+    const cx=pad+col*(cardW+pad), cy=headerH+row*(cardH+pad);
+    const color=SLASH_FLASH[idx];
+    ctx.save();
+    // Card bg
+    ctx.fillStyle='rgba(18,8,38,0.92)'; ctx.strokeStyle=color; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.roundRect(cx,cy,cardW,cardH,10); ctx.fill(); ctx.stroke();
+    // Left accent bar
+    ctx.fillStyle=color; ctx.globalAlpha=0.35;
+    ctx.beginPath(); ctx.roundRect(cx,cy,5,cardH,{upperLeft:10,lowerLeft:10,upperRight:0,lowerRight:0}); ctx.fill();
+    ctx.globalAlpha=1;
+    // Kanji watermark
+    ctx.font=`bold ${Math.round(cardH*0.7)}px Arial`;
+    ctx.fillStyle=color; ctx.globalAlpha=0.10; ctx.textAlign='right';
+    ctx.fillText(SUPER_KANJI[idx], cx+cardW-8, cy+cardH*0.82);
+    ctx.globalAlpha=1;
+
+    const tx=cx+14, fs=s=>Math.round(Math.min(s, cardH*0.15));
+    // Character name
+    ctx.textAlign='left';
+    ctx.font=`bold ${fs(15)}px Arial`; ctx.fillStyle=color;
+    ctx.shadowColor=color; ctx.shadowBlur=8;
+    ctx.fillText(BIRD_DEFS[idx].name, tx, cy+Math.round(cardH*0.22));
+    ctx.shadowBlur=0;
+    // Super name
+    ctx.font=`italic ${fs(11)}px Arial`; ctx.fillStyle='rgba(210,190,255,0.85)';
+    const sn=SUPER_FORMS[idx]; const snMax=cardW-90;
+    ctx.fillText(ctx.measureText(sn).width<snMax?sn:sn.slice(0,Math.floor(sn.length*(snMax/ctx.measureText(sn).width)))+'…', tx, cy+Math.round(cardH*0.41));
+    // Effect (up to 2 lines)
+    ctx.font=`${fs(10)}px Arial`; ctx.fillStyle='rgba(195,175,235,0.75)';
+    const eff=SUPER_EFFECTS[idx], effMax=cardW-24;
+    if(ctx.measureText(eff).width<=effMax){
+      ctx.fillText(eff, tx, cy+Math.round(cardH*0.60));
+    } else {
+      const words=eff.split(' '); let l1='', l2='';
+      for(const w of words){ if(ctx.measureText(l1+w+' ').width<effMax) l1+=w+' '; else l2+=w+' '; }
+      ctx.fillText(l1.trim(), tx, cy+Math.round(cardH*0.57));
+      ctx.fillText(l2.trim(), tx, cy+Math.round(cardH*0.72));
+    }
+    // Stats row
+    const sy=cy+cardH-10;
+    ctx.font=`bold ${fs(10)}px Arial`;
+    ctx.fillStyle='rgba(100,220,255,0.9)'; ctx.fillText(`⚡ ${SUPER_CHARGE_S[idx]}s`, tx, sy);
+    ctx.fillStyle='rgba(255,160,80,0.9)';  ctx.fillText(`⏱ ${SUPER_CD_S[idx]}s`, tx+Math.round(cardW*0.3), sy);
+    ctx.fillStyle='rgba(180,140,255,0.9)'; ctx.fillText(`∑ ${(SUPER_CHARGE_S[idx]+SUPER_CD_S[idx]).toFixed(1)}s`, tx+Math.round(cardW*0.58), sy);
+    ctx.restore();
+  }
+
+  // Nav buttons
+  const navY=H-38;
+  // Back
+  ctx.fillStyle='rgba(255,255,255,0.07)'; ctx.strokeStyle='rgba(180,80,255,0.5)'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.roundRect(10,navY,90,28,8); ctx.fill(); ctx.stroke();
+  ctx.font='bold 13px Arial'; ctx.fillStyle='#cc99ff'; ctx.textAlign='center';
+  ctx.fillText('← Back', 55, navY+19);
+  // Prev
+  if(abilitiesPage>0){
+    ctx.fillStyle='rgba(255,255,255,0.07)'; ctx.strokeStyle='rgba(160,160,255,0.4)'; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.roundRect(W-210,navY,90,28,8); ctx.fill(); ctx.stroke();
+    ctx.font='bold 13px Arial'; ctx.fillStyle='#aabbff';
+    ctx.fillText('← Prev', W-165, navY+19);
+  }
+  // Next
+  if(abilitiesPage<1){
+    ctx.fillStyle='rgba(255,255,255,0.07)'; ctx.strokeStyle='rgba(160,160,255,0.4)'; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.roundRect(W-110,navY,100,28,8); ctx.fill(); ctx.stroke();
+    ctx.font='bold 13px Arial'; ctx.fillStyle='#aabbff';
+    ctx.fillText('Next →', W-60, navY+19);
+  }
+  // Version
+  ctx.font='11px Arial'; ctx.fillStyle='rgba(150,100,220,0.35)'; ctx.textAlign='right';
+  ctx.fillText('v1.6.0', W-10, H-8);
+}
+
 function drawSelectScreen() {
   const g=ctx.createLinearGradient(0,0,0,H);
   g.addColorStop(0,'#0a0015'); g.addColorStop(1,'#1a0035');
@@ -3257,12 +3372,19 @@ function drawSelectScreen() {
   ctx.font='12px Arial'; ctx.fillStyle='rgba(200,200,200,0.5)'; ctx.textAlign='center';
   ctx.fillText('▶ Watch Demo', dr.x+dr.w/2, dr.y+dr.h/2+4);
 
+  // Abilities button
+  const ar=getAbilitiesRect();
+  ctx.fillStyle='rgba(255,255,255,0.05)'; ctx.strokeStyle='rgba(160,100,255,0.35)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.roundRect(ar.x,ar.y,ar.w,ar.h,8); ctx.fill(); ctx.stroke();
+  ctx.font='12px Arial'; ctx.fillStyle='rgba(180,130,255,0.65)'; ctx.textAlign='center';
+  ctx.fillText('✦ Abilities', ar.x+ar.w/2, ar.y+ar.h/2+4);
+
   ctx.font='12px Arial'; ctx.fillStyle='rgba(180,130,255,0.45)'; ctx.textAlign='center';
   ctx.fillText(isMobile ? 'Tap to jump · Hold to glide & charge · Release to attack' : 'Hold Space / Hold Tap to glide · Release to fall', W/2, H-14);
 
   // Version — bottom right
   ctx.font='11px Arial'; ctx.fillStyle='rgba(150,100,220,0.35)'; ctx.textAlign='right';
-  ctx.fillText('v1.4.0', W-10, H-8);
+  ctx.fillText('v1.6.0', W-10, H-8);
 }
 
 // ────────────────────────────────────────────────
@@ -3449,11 +3571,10 @@ function drawHUD() {
     const maxT=shieldIsSuper?450:180, pct=shieldTimer/maxT, bw=100, bh=8, bx=W/2-bw/2, by=88;
     ctx.fillStyle='rgba(0,0,0,0.3)'; ctx.fillRect(bx,by,bw,bh);
     const sg=ctx.createLinearGradient(bx,0,bx+bw*pct,0);
-    if (shieldIsSuper) { sg.addColorStop(0,'#ffcc00'); sg.addColorStop(1,'#fff5aa'); }
-    else               { sg.addColorStop(0,'#4499ff'); sg.addColorStop(1,'#aaddff'); }
+    sg.addColorStop(0,'#4499ff'); sg.addColorStop(1,'#aaddff');
     ctx.fillStyle=sg; ctx.fillRect(bx,by,bw*pct,bh);
-    ctx.font='10px Arial'; ctx.fillStyle=shieldIsSuper?'#ffd700':'#aaddff'; ctx.textAlign='center';
-    ctx.fillText(shieldIsSuper?'✨ SUPER SHIELD':'🛡 SHIELD',W/2,by+20);
+    ctx.font='10px Arial'; ctx.fillStyle='#aaddff'; ctx.textAlign='center';
+    ctx.fillText(shieldIsSuper?'✦ SUPER SHIELD':'🛡 SHIELD',W/2,by+20);
   }
 
   // Level-up flash banner
@@ -3694,7 +3815,7 @@ function update(now) {
         }
         if(a.t*2.8-2*90>H) a.life=0;
         continue; // skip standard hit block below
-      case 'omni_burst': a.life-=0.010; break;
+      case 'omni_burst': a.life-=0.00833; break;
       case 'slow_field': a.x+=a.vx; a.life-=0.006; break;
       case 'love_sweep':
         a.x+=a.vx; a.y=a.baseY+Math.sin(a.t*0.07)*H*0.34; a.life-=0.010; break;
@@ -3810,6 +3931,8 @@ function loop(now) {
     drawSelectScreen();
   } else if (gameState==='leaderboard') {
     drawLeaderboard();
+  } else if (gameState==='abilities') {
+    drawAbilities();
   } else {
     const shake = shakeTimer > 0 ? (Math.random()-0.5)*shakeAmt*2 : 0;
     const shakeY = shakeTimer > 0 ? (Math.random()-0.5)*shakeAmt : 0;
