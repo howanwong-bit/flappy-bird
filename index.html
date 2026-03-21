@@ -1251,6 +1251,8 @@ canvas.addEventListener('mouseup', ()=>{ inputHeld=false; });
 // ── touch: press = jump, hold = arm glide
 canvas.addEventListener('touchstart',e=>{
   e.preventDefault();
+  // Two-finger hold = invincible mode (secret, mirrors desktop Backspace)
+  if(e.touches.length >= 2) { invincible=true; return; }
   if(demoMode){ demoMode=false; inputHeld=false; gameState='select'; return; }
   if(gameState==='select')      { const {mx,my}=getTouch(e); handleSelectClick(mx,my); return; }
   if(gameState==='leaderboard') { gameState='select'; return; }
@@ -1258,7 +1260,12 @@ canvas.addEventListener('touchstart',e=>{
   if(gameState==='waiting') { jump(); inputHeld=true; return; }
   if(gameState==='playing') { jump(); inputHeld=true; }
 },{passive:false});
-canvas.addEventListener('touchend', e=>{ e.preventDefault(); inputHeld=false; },{passive:false});
+canvas.addEventListener('touchend', e=>{
+  e.preventDefault();
+  // Release invincible when no longer multi-touch
+  if(e.touches.length < 2) invincible=false;
+  if(e.touches.length === 0) inputHeld=false;
+},{passive:false});
 
 // ── keyboard: press = jump, hold = arm glide, release = fall
 document.addEventListener('keydown',e=>{
