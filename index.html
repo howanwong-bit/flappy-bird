@@ -1306,7 +1306,7 @@ function spawnSuperAttack(x, y, birdIdx) {
       superAttacks.push({x, y, birdIdx, t:0, life:1, vx:5, vy:0, hh:H*0.5, hw:100, type:'tornado'});
       break;
     case 11: // Obanai — sinuous coil: travels forward oscillating, then reverses for a second pass
-      superAttacks.push({x, y, birdIdx, t:0, life:1, vx:5, vy:0, hh:60, hw:80, type:'serpent', phase:'forward', baseY:y});
+      superAttacks.push({x, y, birdIdx, t:0, life:1, vx:5, vy:0, hh:42, hw:56, type:'serpent', phase:'forward', baseY:y});
       break;
   }
 }
@@ -3663,10 +3663,25 @@ function update(now) {
           if(d<220&&d>0){ const f=3*(1-d/220); e.x+=(a.x-e.x)/d*f; e.y+=(a.y-e.y)/d*f; } });
         break;
       case 'serpent':
-        a.y=a.baseY+Math.sin(a.t*0.06)*H*0.3;
+        a.y=a.baseY+Math.sin(a.t*0.06)*H*0.21;
         if(a.phase==='forward'){ a.x+=a.vx; if(a.x>W+60){a.phase='reverse';a.vx=-6;} }
         else { a.x+=a.vx; if(a.x<-60) a.life=0; }
-        a.life-=0.005; break;
+        a.life-=0.005;
+        // Collect coins and power-ups in path
+        for(let ci=coins.length-1;ci>=0;ci--){
+          const c=coins[ci];
+          if(!c.collected&&Math.abs(c.x-a.x)<a.hw+20&&Math.abs(c.y-a.y)<a.hh){
+            c.collected=true; score+=2; playCoin(); }
+        }
+        for(let pi=powerUps.length-1;pi>=0;pi--){
+          const p=powerUps[pi];
+          if(!p.collected&&Math.abs(p.x-a.x)<a.hw+20&&Math.abs(p.y-a.y)<a.hh){
+            p.collected=true; shieldActive=true;
+            if(p.type==='superShield'){shieldTimer=450;shieldIsSuper=true;flashTimer=18;flashColor='rgb(255,200,0)';}
+            else{shieldTimer=180;shieldIsSuper=false;flashTimer=12;flashColor='rgb(80,160,255)';}
+            playShield(); }
+        }
+        break;
       case 'coin_collect':
       default:
         a.x+=a.vx; a.life-=0.009;
