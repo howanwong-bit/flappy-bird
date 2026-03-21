@@ -2505,22 +2505,31 @@ function drawParticles() {
 // ────────────────────────────────────────────────
 //  Layout rects
 // ────────────────────────────────────────────────
-function getSizeRect(i)  { const sw=90,sh=36,gap=10,tot=3*sw+2*gap; return {x:(W-tot)/2+i*(sw+gap),y:H*0.20,w:sw,h:sh}; }
-function getBirdRect(i)  {
+// ── Shared layout constants (recomputed each frame is fine — pure math)
+function _menuLayout() {
+  // Everything flows top-to-bottom from the title
+  const titleY    = Math.round(H * 0.076);   // title text baseline
+  const subtitleY = Math.round(H * 0.113);   // subtitle baseline
+  // Screen size row (desktop only)
+  const szLabelY  = Math.round(H * 0.152);
+  const szButtonY = Math.round(H * 0.168);   // top of buttons
+  const szButtonH = 32;
+  // Character grid
+  const birdLabelY= isMobile ? Math.round(H*0.155) : Math.round(szButtonY + szButtonH + 14);
+  const birdGridY = isMobile ? Math.round(H*0.170) : Math.round(birdLabelY + 14);
   const cols=4;
-  const bw=Math.min(145,(W-40)/cols), bh=Math.min(88,bw*0.68);
-  const row=Math.floor(i/cols), col=i%cols;
+  const bw=Math.min(140,(W-40)/cols), bh=Math.min(72,Math.round(bw*0.55));
   const gapY=6;
-  return {x:(W-bw*cols)/2+col*bw, y:H*0.24+row*(bh+gapY), w:bw, h:bh};
+  const gridBottom= birdGridY + 3*(bh+gapY);
+  return {titleY,subtitleY,szLabelY,szButtonY,szButtonH,birdLabelY,birdGridY,cols,bw,bh,gapY,gridBottom};
 }
-function getBirdGridBottom() {
-  const bw=Math.min(145,(W-40)/4), bh=Math.min(88,bw*0.68);
-  return H*0.24 + 3*(bh+6);
-}
-function getDiffRect(i)  { const gb=getBirdGridBottom(), dw=Math.min(108,(W-60)/3-8),dh=38,gap=Math.min(12,(W-3*dw-40)/2),tot=3*dw+2*gap; return {x:(W-tot)/2+i*(dw+gap),y:gb+18,w:dw,h:dh}; }
-function getPlayRect()   { const gb=getBirdGridBottom(); return {x:W/2-165,y:gb+70,w:150,h:46}; }
-function getLeadRect()   { const gb=getBirdGridBottom(); return {x:W/2+15, y:gb+70,w:150,h:46}; }
-function getDemoRect()   { const gb=getBirdGridBottom(); return {x:W/2-80, y:gb+124,w:160,h:32}; }
+function getSizeRect(i)  { const m=_menuLayout(),sw=88,sh=m.szButtonH,gap=10,tot=3*sw+2*gap; return {x:(W-tot)/2+i*(sw+gap),y:m.szButtonY,w:sw,h:sh}; }
+function getBirdRect(i)  { const m=_menuLayout(); const row=Math.floor(i/m.cols),col=i%m.cols; return {x:(W-m.bw*m.cols)/2+col*m.bw, y:m.birdGridY+row*(m.bh+m.gapY), w:m.bw, h:m.bh}; }
+function getBirdGridBottom() { return _menuLayout().gridBottom; }
+function getDiffRect(i)  { const gb=getBirdGridBottom(), dw=Math.min(108,(W-60)/3-8),dh=34,gap=Math.min(12,(W-3*dw-40)/2),tot=3*dw+2*gap; return {x:(W-tot)/2+i*(dw+gap),y:gb+16,w:dw,h:dh}; }
+function getPlayRect()   { const gb=getBirdGridBottom(); return {x:W/2-165,y:gb+60,w:150,h:42}; }
+function getLeadRect()   { const gb=getBirdGridBottom(); return {x:W/2+15, y:gb+60,w:150,h:42}; }
+function getDemoRect()   { const gb=getBirdGridBottom(); return {x:W/2-80, y:gb+110,w:160,h:28}; }
 function inRect(mx,my,r) { return mx>r.x&&mx<r.x+r.w&&my>r.y&&my<r.y+r.h; }
 
 // ────────────────────────────────────────────────
@@ -2996,43 +3005,45 @@ function drawSelectScreen() {
   ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
   drawStars();
 
+  const ml=_menuLayout();
   ctx.textAlign='center';
-  ctx.font=`bold ${Math.round(W*0.062)}px Segoe UI,Arial`;
+  ctx.font=`bold ${Math.round(W*0.058)}px Segoe UI,Arial`;
   ctx.fillStyle='#ff4444'; ctx.shadowColor='rgba(255,50,50,0.8)'; ctx.shadowBlur=20;
-  ctx.fillText('⚔️ DEMON SLAYER BIRD', W/2, H*0.09);
+  ctx.fillText('⚔️ DEMON SLAYER BIRD', W/2, ml.titleY);
   ctx.shadowBlur=0;
-  ctx.font=`${Math.round(W*0.023)}px Arial`; ctx.fillStyle='#cc99ff';
-  ctx.fillText('Choose your Breath Style and take flight!', W/2, H*0.135);
+  ctx.font=`${Math.round(W*0.021)}px Arial`; ctx.fillStyle='#cc99ff';
+  ctx.fillText('Choose your Breath Style and take flight!', W/2, ml.subtitleY);
 
   // Screen size (desktop only — mobile auto-scales)
   if (!isMobile) {
-    secLabel('SCREEN SIZE', H*0.183);
+    secLabel('SCREEN SIZE', ml.szLabelY);
     SIZE_KEYS.forEach((k,i)=>{
       const r=getSizeRect(i), isSel=selectedSize_key===k, isH=hoverSize===k;
       ctx.fillStyle=isSel?'rgba(150,80,255,0.25)':isH?'rgba(255,255,255,0.08)':'rgba(255,255,255,0.04)';
       ctx.strokeStyle=isSel?'#aa55ff':isH?'rgba(255,255,255,0.3)':'rgba(255,255,255,0.12)';
       ctx.lineWidth=isSel?2:1;
       ctx.beginPath(); ctx.roundRect(r.x,r.y,r.w,r.h,8); ctx.fill(); ctx.stroke();
-      ctx.font=`bold ${isSel?15:14}px Arial`; ctx.fillStyle=isSel?'#cc88ff':'#9977cc'; ctx.textAlign='center';
+      ctx.font=`bold ${isSel?14:13}px Arial`; ctx.fillStyle=isSel?'#cc88ff':'#9977cc'; ctx.textAlign='center';
       ctx.fillText(SIZE_DEFS[k].label,r.x+r.w/2,r.y+r.h/2+5);
     });
   }
 
   // Bird selection
-  secLabel('CHOOSE YOUR SLAYER', H*0.228);
+  secLabel('CHOOSE YOUR SLAYER', ml.birdLabelY);
   for(let i=0;i<12;i++){
     const b=getBirdRect(i), def=BIRD_DEFS[i];
     const isSel=selectedBird===i, isH=hoverBird===i;
     ctx.fillStyle=isSel?'rgba(255,50,50,0.15)':isH?'rgba(255,255,255,0.06)':'rgba(255,255,255,0.03)';
     ctx.strokeStyle=isSel?'#ff4444':isH?'rgba(255,200,200,0.4)':'rgba(255,255,255,0.12)';
     ctx.lineWidth=isSel?2:1;
-    ctx.beginPath(); ctx.roundRect(b.x+3,b.y+3,b.w-6,b.h-6,10); ctx.fill(); ctx.stroke();
-    const sc=Math.max(0.62,Math.min(1.1,b.w/82));
+    ctx.beginPath(); ctx.roundRect(b.x+2,b.y+2,b.w-4,b.h-4,8); ctx.fill(); ctx.stroke();
+    const sc=Math.max(0.52,Math.min(1.0,b.w/82));
     drawBirdAt(b.x+b.w/2,b.y+b.h*0.44,def,0,performance.now()*0.004,sc);
-    ctx.font=`bold ${Math.round(b.w*0.12)}px Arial`; ctx.fillStyle=isSel?'#ff6666':'#cc99aa'; ctx.textAlign='center';
-    ctx.fillText(def.name,b.x+b.w/2,b.y+b.h-13);
-    ctx.font=`${Math.round(b.w*0.09)}px Arial`; ctx.fillStyle=isSel?'#ffaaaa':'#886688';
-    ctx.fillText(def.subtitle,b.x+b.w/2,b.y+b.h-2);
+    const nameSz=Math.max(9,Math.round(b.w*0.115));
+    ctx.font=`bold ${nameSz}px Arial`; ctx.fillStyle=isSel?'#ff6666':'#cc99aa'; ctx.textAlign='center';
+    ctx.fillText(def.name,b.x+b.w/2,b.y+b.h-11);
+    ctx.font=`${Math.max(8,Math.round(b.w*0.085))}px Arial`; ctx.fillStyle=isSel?'#ffaaaa':'#886688';
+    ctx.fillText(def.subtitle,b.x+b.w/2,b.y+b.h-1);
   }
 
   // Difficulty
@@ -3049,22 +3060,21 @@ function drawSelectScreen() {
   });
 
   const pr=getPlayRect(),lr=getLeadRect();
-  const py=pr.y;
   ctx.fillStyle='#cc1111'; ctx.shadowColor='rgba(255,50,50,0.6)'; ctx.shadowBlur=14;
-  ctx.beginPath(); ctx.roundRect(pr.x,py,pr.w,46,12); ctx.fill(); ctx.shadowBlur=0;
-  ctx.font='bold 19px Arial'; ctx.fillStyle='#fff'; ctx.textAlign='center';
-  ctx.fillText('⚔️  PLAY!', pr.x+pr.w/2, py+30);
+  ctx.beginPath(); ctx.roundRect(pr.x,pr.y,pr.w,pr.h,12); ctx.fill(); ctx.shadowBlur=0;
+  ctx.font='bold 17px Arial'; ctx.fillStyle='#fff'; ctx.textAlign='center';
+  ctx.fillText('⚔️  PLAY!', pr.x+pr.w/2, pr.y+pr.h*0.65);
 
   ctx.fillStyle='rgba(255,255,255,0.07)'; ctx.strokeStyle='rgba(180,80,255,0.5)'; ctx.lineWidth=2;
-  ctx.beginPath(); ctx.roundRect(lr.x,py,lr.w,46,12); ctx.fill(); ctx.stroke();
-  ctx.font='bold 19px Arial'; ctx.fillStyle='#cc99ff'; ctx.textAlign='center';
-  ctx.fillText('🏆 Scores', lr.x+lr.w/2, py+30);
+  ctx.beginPath(); ctx.roundRect(lr.x,lr.y,lr.w,lr.h,12); ctx.fill(); ctx.stroke();
+  ctx.font='bold 17px Arial'; ctx.fillStyle='#cc99ff'; ctx.textAlign='center';
+  ctx.fillText('🏆 Scores', lr.x+lr.w/2, lr.y+lr.h*0.65);
 
   // Demo button
   const dr=getDemoRect();
   ctx.fillStyle='rgba(255,255,255,0.05)'; ctx.strokeStyle='rgba(200,200,200,0.22)'; ctx.lineWidth=1;
   ctx.beginPath(); ctx.roundRect(dr.x,dr.y,dr.w,dr.h,8); ctx.fill(); ctx.stroke();
-  ctx.font='13px Arial'; ctx.fillStyle='rgba(200,200,200,0.5)'; ctx.textAlign='center';
+  ctx.font='12px Arial'; ctx.fillStyle='rgba(200,200,200,0.5)'; ctx.textAlign='center';
   ctx.fillText('▶ Watch Demo', dr.x+dr.w/2, dr.y+dr.h/2+4);
 
   ctx.font='12px Arial'; ctx.fillStyle='rgba(180,130,255,0.45)'; ctx.textAlign='center';
