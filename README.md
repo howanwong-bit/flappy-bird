@@ -4,14 +4,18 @@ A Demon Slayer-themed Flappy Bird game built as a single, dependency-free HTML f
 
 ## Characters
 
-Each character has a unique visual style, elemental trail, ambient aura, and exclusive breath attack:
+Each character has a unique visual style, elemental trail, ambient aura, exclusive breath attack, and super attack:
 
-| Character | Breathing Style | Trail | Aura | Breath Attack |
-|-----------|----------------|-------|------|---------------|
-| Tanjiro | Water | Blue droplets + ripple rings | Pulsing water rings | Tenth Form: Constant Flux — sinusoidal water streams |
-| Zenitsu | Thunder | Electric sparks + zigzag bolts | Crackling lightning arcs | First Form: Thunderclap Flash — instant screen-wide bolt |
-| Inosuke | Beast | Wind arc slashes | Spinning claw arcs | Seventh Fang: Spatial Awareness — 5-slash claw fan |
-| Rengoku | Flame | Flickering flames + embers | Flame corona spikes | Ninth Form: Rengoku — giant fireball with flame tongues |
+| Character | Breathing Style | Trail | Breath Attack | Super Attack |
+|-----------|----------------|-------|---------------|--------------|
+| Tanjiro | Water | Blue droplets + ripple rings | Tenth Form: Constant Flux | Total Concentration: Raging Torrent |
+| Zenitsu | Thunder | Electric sparks + zigzag bolts | First Form: Thunderclap Flash | God Speed: Heaven's Thunder |
+| Inosuke | Beast | Wind arc slashes | Seventh Fang: Spatial Awareness | Beast Rampage: Primal Fury |
+| Rengoku | Flame | Flickering flames + embers | Ninth Form: Rengoku | Flame Breathing: Purgatory |
+| Shinobu | Insect | Butterfly scales + poison wisps | Dance of the Butterfly God | Insect Breathing: Compound Eye Hexagon |
+| Tengen | Sound | Sound rings + gem sparks | Fourth Form: Constant Resounding Slashes | Sound Breathing: String Performance |
+| Muichiro | Mist | Slow mist wisps | Seventh Form: Obscuring Clouds | Mist Breathing: Sea of Clouds and Haze |
+| Mitsuri | Love | Pink petals | Sixth Form: Cat-legged Winds of Love | Love Breathing: Swaying Love Wildly |
 
 ## Enemies
 
@@ -46,7 +50,7 @@ Three types of demons spawn and fly across the screen, increasing in difficulty 
 - **Progressive Stages** — every 10 points advances the stage, increasing pipe speed, tightening gaps, and scaling enemy spawn rate (up to ×1.7 speed, 88px minimum gap)
 - **Oscillating Pipes** — after Stage 3, pipes move vertically
 - **Dynamic Sky** — background shifts from night blue → purple dusk → demon red → blood moon
-- **Shield Orb** — 15% spawn chance per pipe; absorbs one collision
+- **Shield Orb** — ~15% spawn chance per pipe; blue orb absorbs one collision (180 frames); rare golden **Super Shield** (~5%) lasts 450 frames (2.5× duration)
 - **Leaderboard** — top 10 scores stored in `localStorage` with name, score, difficulty, and stage
 - **Procedurally Generated Music** — original A-minor action score via Web Audio API (melody, bass, taiko percussion); no audio files required
 

@@ -199,9 +199,9 @@ const BIRD_DEFS = [
     belly:'#ffeecc', bk1:'#ffcc00', bk2:'#ff9900', eye:'#ff8800',
     h1:'#cc1100', h2:'#660000', hb:'#ff2200',
     trail1:'#ff4400', trail2:'#ffaa00',
-    extras(cx, cy, R) {  // flame spikes on helmet + intense brows
+    extras(cx, cy, R) {
       const flameSpikes = [[-6,-R-4],[-2,-R-8],[2,-R-9],[6,-R-5]];
-      flameSpikes.forEach(([dx,dy],i)=>{
+      flameSpikes.forEach(([dx,dy])=>{
         const g=ctx.createLinearGradient(cx+dx,cy+dy,cx+dx,cy-R);
         g.addColorStop(0,'#ff2200'); g.addColorStop(1,'#ffaa00');
         ctx.fillStyle=g;
@@ -209,9 +209,86 @@ const BIRD_DEFS = [
         ctx.moveTo(cx+dx-3,cy-R+4); ctx.lineTo(cx+dx,cy+dy); ctx.lineTo(cx+dx+3,cy-R+4);
         ctx.closePath(); ctx.fill();
       });
-      // thick fierce eyebrow
       ctx.strokeStyle='#441100'; ctx.lineWidth=2.5; ctx.lineCap='round';
       ctx.beginPath(); ctx.moveTo(cx+3,cy-9); ctx.lineTo(cx+11,cy-7); ctx.stroke();
+    }
+  },
+  // ── Row 2 Hashiras ──────────────────────────────
+  {
+    name:'Shinobu', subtitle:'Insect Breathing',
+    body1:'#7744aa', body2:'#553388', bodyDk:'#331166',
+    wg1:'#553388',  wg2:'#9966cc',
+    belly:'#eeddff', bk1:'#ffdd44', bk2:'#ddaa00', eye:'#aa44ff',
+    h1:'#442266', h2:'#220044', hb:'#664499',
+    trail1:'#cc66ff', trail2:'#ffaaff',
+    extras(cx, cy, R) {  // butterfly wings on side + flower ornament
+      ctx.fillStyle='rgba(180,80,255,0.75)';
+      ctx.beginPath(); ctx.ellipse(cx-R-3,cy-5,5,9,-0.4,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(cx-R-3,cy+6,4,7,0.5,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='rgba(220,140,255,0.55)';
+      ctx.beginPath(); ctx.ellipse(cx-R-3,cy-5,3,6,-0.4,0,Math.PI*2); ctx.fill();
+      for(let i=0;i<5;i++){
+        const a=i/5*Math.PI*2;
+        ctx.fillStyle='#ffdd44'; ctx.beginPath(); ctx.arc(cx+R-5+Math.cos(a)*3,cy-R+3+Math.sin(a)*3,1.8,0,Math.PI*2); ctx.fill();
+      }
+      ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(cx+R-5,cy-R+3,1.5,0,Math.PI*2); ctx.fill();
+    }
+  },
+  {
+    name:'Tengen', subtitle:'Sound Breathing',
+    body1:'#ccaa22', body2:'#aa8800', bodyDk:'#665500',
+    wg1:'#998800',  wg2:'#eedd44',
+    belly:'#fffff0', bk1:'#ff5500', bk2:'#cc3300', eye:'#ffaa00',
+    h1:'#ffffff', h2:'#ccccaa', hb:'#eeeecc',
+    trail1:'#ffee44', trail2:'#ffffff',
+    extras(cx, cy, R) {  // white headband + gem trio + circle marking
+      ctx.fillStyle='rgba(255,255,255,0.9)';
+      ctx.fillRect(cx-R,cy-R-1,R*2,4);
+      ['#ff3333','#4466ff','#33cc33'].forEach((c,i)=>{
+        ctx.fillStyle=c; ctx.beginPath(); ctx.arc(cx-5+i*5,cy-R+1,2.5,0,Math.PI*2); ctx.fill();
+      });
+      ctx.strokeStyle='rgba(255,220,0,0.7)'; ctx.lineWidth=1.5;
+      ctx.beginPath(); ctx.arc(cx,cy,R*0.45,0,Math.PI*2); ctx.stroke();
+    }
+  },
+  {
+    name:'Muichiro', subtitle:'Mist Breathing',
+    body1:'#228888', body2:'#115555', bodyDk:'#003333',
+    wg1:'#115555',  wg2:'#44aaaa',
+    belly:'#ccffff', bk1:'#9999bb', bk2:'#666688', eye:'#33bbaa',
+    h1:'#006666', h2:'#003344', hb:'#008888',
+    trail1:'#88dddd', trail2:'#ccffff',
+    extras(cx, cy, R) {  // long flowing hair strands + mist dots
+      ctx.strokeStyle='rgba(100,220,220,0.85)'; ctx.lineWidth=2; ctx.lineCap='round';
+      ctx.beginPath(); ctx.moveTo(cx-R+4,cy-R+2);
+      ctx.quadraticCurveTo(cx-R-7,cy+2,cx-R-1,cy+R); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx-R+6,cy-R+5);
+      ctx.quadraticCurveTo(cx-R-3,cy+4,cx-R+3,cy+R-3); ctx.stroke();
+      ctx.fillStyle='rgba(160,240,240,0.7)';
+      [[-3,-4],[3,-2],[-1,3]].forEach(([dx,dy])=>{
+        ctx.beginPath(); ctx.arc(cx+dx,cy+dy,1.8,0,Math.PI*2); ctx.fill();
+      });
+    }
+  },
+  {
+    name:'Mitsuri', subtitle:'Love Breathing',
+    body1:'#cc3377', body2:'#992255', bodyDk:'#660033',
+    wg1:'#992255',  wg2:'#ff6699',
+    belly:'#ffe0ee', bk1:'#33aa44', bk2:'#228833', eye:'#ff44aa',
+    h1:'#ff3366', h2:'#cc1144', hb:'#ff5588',
+    trail1:'#ff88cc', trail2:'#ffccee',
+    extras(cx, cy, R) {  // long braid + heart mark
+      ctx.strokeStyle='#ff6699'; ctx.lineWidth=2.5; ctx.lineCap='round';
+      ctx.beginPath(); ctx.moveTo(cx-R+4,cy-R+3);
+      ctx.quadraticCurveTo(cx-R-5,cy,cx-R-2,cy+R); ctx.stroke();
+      const hx=cx+R-7, hy=cy-3;
+      ctx.fillStyle='#ff3399';
+      ctx.beginPath(); ctx.moveTo(hx,hy+3);
+      ctx.bezierCurveTo(hx,hy,hx-4,hy,hx-4,hy+3);
+      ctx.bezierCurveTo(hx-4,hy+6,hx,hy+7,hx,hy+7);
+      ctx.bezierCurveTo(hx,hy+7,hx+4,hy+6,hx+4,hy+3);
+      ctx.bezierCurveTo(hx+4,hy,hx,hy,hx,hy+3);
+      ctx.fill();
     }
   },
 ];
@@ -272,14 +349,14 @@ let demoMode      = false; // AI auto-play
 let demoJumpCD    = 0;     // frames until AI can jump again
 let pipeBreaks    = [];    // flying shard debris
 let shakeTimer    = 0, shakeAmt = 0;
-const SLASH_FLASH  = ['rgb(80,180,255)','rgb(255,238,0)','rgb(85,255,170)','rgb(255,120,0)'];
-const SLASH_NAMES  = ['水の呼吸','雷の呼吸','獣の呼吸','炎の呼吸'];
-const SLASH_LABELS = ['Water Breathing','Thunder Breathing','Beast Breathing','Flame Breathing'];
-const BREATH_FORMS = ['Tenth Form: Constant Flux','First Form: Thunderclap Flash','Seventh Fang: Spatial Awareness','Ninth Form: Rengoku'];
-const SUPER_FORMS  = ['Total Concentration: Raging Torrent','God Speed: Heaven\'s Thunder','Beast Rampage: Primal Fury','Flame Breathing: Purgatory'];
+const SLASH_FLASH  = ['rgb(80,180,255)','rgb(255,238,0)','rgb(85,255,170)','rgb(255,120,0)','rgb(190,80,255)','rgb(255,215,60)','rgb(80,220,210)','rgb(255,100,180)'];
+const SLASH_NAMES  = ['水の呼吸','雷の呼吸','獣の呼吸','炎の呼吸','虫の呼吸','音の呼吸','霞の呼吸','恋の呼吸'];
+const SLASH_LABELS = ['Water Breathing','Thunder Breathing','Beast Breathing','Flame Breathing','Insect Breathing','Sound Breathing','Mist Breathing','Love Breathing'];
+const BREATH_FORMS = ['Tenth Form: Constant Flux','First Form: Thunderclap Flash','Seventh Fang: Spatial Awareness','Ninth Form: Rengoku','Dance of the Butterfly God','Fourth Form: Constant Resounding Slashes','Seventh Form: Obscuring Clouds','Sixth Form: Cat-legged Winds of Love'];
+const SUPER_FORMS  = ['Total Concentration: Raging Torrent','God Speed: Heaven\'s Thunder','Beast Rampage: Primal Fury','Flame Breathing: Purgatory','Insect Breathing: Compound Eye Hexagon','Sound Breathing: String Performance','Mist Breathing: Sea of Clouds and Haze','Love Breathing: Swaying Love Wildly'];
 let score, lastPipeTime, currentLevel, levelUpTimer;
 let pipeSpeed, pipeGap, pipeInterval;
-let shieldActive, shieldTimer, flashTimer, flashColor;
+let shieldActive, shieldTimer, shieldIsSuper, flashTimer, flashColor;
 let gliding = false;
 let inputHeld = false;
 let skyTheme = 0;
@@ -494,7 +571,7 @@ function initGame() {
   pipes      = []; coins=[]; powerUps=[]; particles=[]; enemies=[]; slashEffects=[]; breathAttacks=[]; superAttacks=[]; pipeBreaks=[];
   demonsKilled=0; chargeLevel=0; prevGliding=false;
   score=0; lastPipeTime=0; lastEnemyTime=0; currentLevel=0; levelUpTimer=0;
-  shieldActive=false; shieldTimer=0; flashTimer=0; flashColor='#fff';
+  shieldActive=false; shieldTimer=0; shieldIsSuper=false; flashTimer=0; flashColor='#fff';
   gliding=false; inputHeld=false; skyTheme=0; demoJumpCD=0;
 }
 
@@ -529,8 +606,14 @@ function spawnPipe(now) {
     coins.push({ x:W+PIPE_WIDTH/2, y:mid+(Math.random()-0.5)*vary*2,
                  spin:Math.random()*Math.PI*2, collected:false });
   }
-  // Shield orb (15% chance), appears between this pipe and next
-  if (Math.random()<0.15) {
+  // Shield orbs: 5% super shield, else 15% normal shield (mutually exclusive)
+  const rng=Math.random();
+  if (rng<0.05) {
+    const mid=topH+pipeGap/2;
+    powerUps.push({ type:'superShield', x:W+PIPE_WIDTH+60+Math.random()*80,
+                    y:mid+(Math.random()-0.5)*pipeGap*0.4,
+                    pulse:Math.random()*Math.PI*2, collected:false });
+  } else if (rng<0.20) {
     const mid=topH+pipeGap/2;
     powerUps.push({ type:'shield', x:W+PIPE_WIDTH+60+Math.random()*80,
                     y:mid+(Math.random()-0.5)*pipeGap*0.4,
@@ -551,7 +634,7 @@ function checkCollision() {
         if (protected_) {
           spawnPipeBreak(p);
           pipes.splice(i,1);
-          if (shieldActive) { shieldActive=false; shieldTimer=0; }
+          if (shieldActive) { shieldActive=false; shieldTimer=0; shieldIsSuper=false; }
           flashTimer=10; flashColor='rgb(180,150,80)';
           playPipeBreak();
           shakeTimer=12; shakeAmt=7;
@@ -808,7 +891,7 @@ function drawChargingAura(x, y) {
     ctx.beginPath(); ctx.arc(0,0,30+c*8,0,Math.PI*2); ctx.stroke();
     ctx.shadowBlur=0;
 
-  } else {
+  } else if (selectedBird===3) {
     // Rengoku — intensifying flame corona spikes → tornado
     ctx.shadowColor='#ff4400'; ctx.shadowBlur=26*c;
     const spikes=Math.ceil(6+c*7);
@@ -823,6 +906,66 @@ function drawChargingAura(x, y) {
     const gc2=ctx.createRadialGradient(0,0,0,0,0,20);
     gc2.addColorStop(0,'rgba(255,255,160,1)'); gc2.addColorStop(0.5,'rgba(255,130,0,0.6)'); gc2.addColorStop(1,'rgba(255,40,0,0)');
     ctx.fillStyle=gc2; ctx.beginPath(); ctx.arc(0,0,20,0,Math.PI*2); ctx.fill();
+    ctx.shadowBlur=0;
+
+  } else if (selectedBird===4) {
+    // Shinobu — orbiting butterfly wings + poison haze
+    ctx.shadowColor='#cc44ff'; ctx.shadowBlur=18*c;
+    const gc=ctx.createRadialGradient(0,0,14,0,0,30+c*12);
+    gc.addColorStop(0,'rgba(190,80,255,0)'); gc.addColorStop(0.5,`rgba(190,80,255,${c*0.22})`); gc.addColorStop(1,'rgba(190,80,255,0)');
+    ctx.globalAlpha=1; ctx.fillStyle=gc; ctx.beginPath(); ctx.arc(0,0,30+c*12,0,Math.PI*2); ctx.fill();
+    // orbiting butterfly silhouettes
+    for (let i=0;i<4;i++){
+      const a=t*3.5+i*Math.PI/2, r=20+c*10;
+      const bx=Math.cos(a)*r, by=Math.sin(a)*r;
+      ctx.globalAlpha=c*0.75; ctx.fillStyle=i%2===0?'#cc66ff':'#ffaaff';
+      ctx.beginPath(); ctx.ellipse(bx-2.5,by,4,2.5,a,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(bx+2.5,by,4,2.5,a,0,Math.PI*2); ctx.fill();
+    }
+    ctx.shadowBlur=0;
+
+  } else if (selectedBird===5) {
+    // Tengen — expanding sound rings + gem flashes
+    ctx.shadowColor='#ffd000'; ctx.shadowBlur=20*c;
+    for (let i=0;i<Math.ceil(c*5);i++){
+      const rad=16+i*10+c*8, a=c*(0.5+Math.sin(t*7+i)*0.35);
+      ctx.globalAlpha=a; ctx.strokeStyle=`rgba(255,220,60,${a})`; ctx.lineWidth=2.5;
+      ctx.beginPath(); ctx.arc(0,0,rad,0,Math.PI*2); ctx.stroke();
+    }
+    for (let i=0;i<6;i++){
+      const a=t*5+i*Math.PI/3, r=24+c*10;
+      ctx.globalAlpha=c*0.9; ctx.fillStyle=i%2===0?'#ffe060':'#ff8833';
+      ctx.beginPath(); ctx.arc(Math.cos(a)*r,Math.sin(a)*r,2+c*2,0,Math.PI*2); ctx.fill();
+    }
+    ctx.shadowBlur=0;
+
+  } else if (selectedBird===6) {
+    // Muichiro — slow-drifting mist cloud
+    ctx.shadowColor='#44ddcc'; ctx.shadowBlur=16*c;
+    for (let i=0;i<Math.ceil(c*6);i++){
+      const a=t*1.5+i*Math.PI*2/6, r=18+c*14, drift=Math.sin(t*2+i)*4;
+      const gc2=ctx.createRadialGradient(Math.cos(a)*r+drift,Math.sin(a)*r,0,Math.cos(a)*r+drift,Math.sin(a)*r,8+c*6);
+      gc2.addColorStop(0,`rgba(80,220,210,${c*0.4})`); gc2.addColorStop(1,'rgba(80,220,210,0)');
+      ctx.globalAlpha=1; ctx.fillStyle=gc2;
+      ctx.beginPath(); ctx.arc(Math.cos(a)*r+drift,Math.sin(a)*r,8+c*6,0,Math.PI*2); ctx.fill();
+    }
+    ctx.globalAlpha=c*0.25; ctx.strokeStyle='#88dddd'; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.arc(0,0,28+c*10,0,Math.PI*2); ctx.stroke();
+    ctx.shadowBlur=0;
+
+  } else {
+    // Mitsuri — spinning petal ring + heart glow
+    ctx.shadowColor='#ff66aa'; ctx.shadowBlur=18*c;
+    const gc3=ctx.createRadialGradient(0,0,12,0,0,30+c*14);
+    gc3.addColorStop(0,'rgba(255,100,180,0)'); gc3.addColorStop(0.5,`rgba(255,100,180,${c*0.28})`); gc3.addColorStop(1,'rgba(255,100,180,0)');
+    ctx.globalAlpha=1; ctx.fillStyle=gc3; ctx.beginPath(); ctx.arc(0,0,30+c*14,0,Math.PI*2); ctx.fill();
+    for (let i=0;i<8;i++){
+      const a=t*4+i*Math.PI*2/8, r=22+c*10;
+      ctx.save(); ctx.translate(Math.cos(a)*r,Math.sin(a)*r); ctx.rotate(a+t*2);
+      ctx.globalAlpha=c*0.8; ctx.fillStyle=i%2===0?'#ff88cc':'#ffccee';
+      ctx.beginPath(); ctx.ellipse(0,0,3+c*2,1.5+c,0,0,Math.PI*2); ctx.fill();
+      ctx.restore();
+    }
     ctx.shadowBlur=0;
   }
 
@@ -942,14 +1085,13 @@ function drawBreathAttacks() {
       });
       ctx.shadowBlur=0;
 
-    } else {
+    } else if (a.birdIdx===3) {
       // Rengoku — giant fireball with radiating flame spikes (Flame Ninth Form)
       ctx.shadowColor='#ff3300'; ctx.shadowBlur=34;
       const r2=44+p*32+(1-al)*15;
       const fg=ctx.createRadialGradient(0,0,0,0,0,r2);
       fg.addColorStop(0,`rgba(255,255,180,${al})`); fg.addColorStop(0.35,`rgba(255,150,0,${al*0.9})`); fg.addColorStop(1,'rgba(255,40,0,0)');
       ctx.globalAlpha=al; ctx.fillStyle=fg; ctx.beginPath(); ctx.arc(0,0,r2,0,Math.PI*2); ctx.fill();
-      // forward flame tongues fanning right
       for (let j=0;j<9;j++){
         const ang=(j/9)*Math.PI*1.2-Math.PI*0.6;
         const flen=65+p*60, flick=1+Math.sin(t*0.5+j)*0.3;
@@ -959,11 +1101,127 @@ function drawBreathAttacks() {
         ctx.beginPath(); ctx.moveTo(Math.cos(ang)*r2*0.3,Math.sin(ang)*r2*0.3);
         ctx.lineTo(Math.cos(ang)*flen*flick,Math.sin(ang)*flen*flick); ctx.stroke();
       }
-      // ember sparks shower
       for (let i=0;i<6;i++){
         const ea=(Math.random()-0.5)*Math.PI, er=r2+Math.random()*40;
         ctx.globalAlpha=al*0.7; ctx.fillStyle=Math.random()>0.5?'#ffdd00':'#ff6600';
         ctx.beginPath(); ctx.arc(Math.cos(ea)*er,Math.sin(ea)*er,2+Math.random()*3,0,Math.PI*2); ctx.fill();
+      }
+      ctx.shadowBlur=0;
+
+    } else if (a.birdIdx===4) {
+      // Shinobu — toxic butterfly spread (Dance of the Butterfly God)
+      ctx.shadowColor='#bb44ff'; ctx.shadowBlur=22;
+      const gc=ctx.createRadialGradient(0,0,0,0,0,40+p*25);
+      gc.addColorStop(0,`rgba(190,80,255,${al*0.3})`); gc.addColorStop(1,'rgba(190,80,255,0)');
+      ctx.globalAlpha=al; ctx.fillStyle=gc; ctx.beginPath(); ctx.arc(0,0,40+p*25,0,Math.PI*2); ctx.fill();
+      // 8 butterfly-wing streams in a fan
+      for (let j=0;j<8;j++){
+        const ang=(j/8)*Math.PI*1.4-Math.PI*0.7;
+        const len=55+p*45;
+        const g=ctx.createLinearGradient(0,0,Math.cos(ang)*len,Math.sin(ang)*len);
+        g.addColorStop(0,`rgba(220,120,255,${al})`); g.addColorStop(0.6,`rgba(170,60,255,${al*0.6})`); g.addColorStop(1,'rgba(170,60,255,0)');
+        ctx.strokeStyle=g; ctx.lineWidth=3+p*1.5; ctx.lineCap='round';
+        ctx.globalAlpha=al*0.9;
+        ctx.beginPath();
+        for (let x2=0;x2<=len;x2+=4){
+          const y2=Math.sin(x2*0.15+t*0.4)*(5+p*6);
+          x2===0?ctx.moveTo(x2*Math.cos(ang)-y2*Math.sin(ang),x2*Math.sin(ang)+y2*Math.cos(ang))
+                :ctx.lineTo(x2*Math.cos(ang)-y2*Math.sin(ang),x2*Math.sin(ang)+y2*Math.cos(ang));
+        }
+        ctx.stroke();
+      }
+      // poison orb core
+      for (let i=0;i<5;i++){
+        const a2=t*6+i*Math.PI*2/5, r3=8+p*5;
+        ctx.globalAlpha=al*0.8; ctx.fillStyle='rgba(220,160,255,0.9)';
+        ctx.beginPath(); ctx.arc(Math.cos(a2)*r3,Math.sin(a2)*r3,2+p*1.5,0,Math.PI*2); ctx.fill();
+      }
+      ctx.shadowBlur=0;
+
+    } else if (a.birdIdx===5) {
+      // Tengen — sound wave explosion (Fourth Form: Constant Resounding Slashes)
+      ctx.shadowColor='#ffd000'; ctx.shadowBlur=30;
+      const fg2=ctx.createRadialGradient(0,0,0,0,0,50+p*30);
+      fg2.addColorStop(0,`rgba(255,240,100,${al*0.4})`); fg2.addColorStop(1,'rgba(255,200,0,0)');
+      ctx.globalAlpha=al; ctx.fillStyle=fg2; ctx.beginPath(); ctx.arc(0,0,50+p*30,0,Math.PI*2); ctx.fill();
+      // 5 concentric expanding rings (sound waves)
+      for (let i=0;i<5;i++){
+        const rad=(12+i*16)+p*20+(t*0.3%(10+i*5));
+        ctx.globalAlpha=al*Math.max(0,0.9-i*0.15);
+        ctx.strokeStyle=i%2===0?`rgba(255,230,80,${al})`:`rgba(255,160,30,${al*0.7})`;
+        ctx.lineWidth=3.5-i*0.5; ctx.beginPath(); ctx.arc(0,0,rad,0,Math.PI*2); ctx.stroke();
+      }
+      // gem-colored slashes
+      [-0.4,-0.15,0,0.15,0.4].forEach((ang,j)=>{
+        const len=60+p*50;
+        ctx.save(); ctx.rotate(ang);
+        const g=ctx.createLinearGradient(0,0,len,0);
+        g.addColorStop(0,`rgba(255,215,60,${al*0.95})`); g.addColorStop(1,'rgba(255,215,60,0)');
+        ctx.strokeStyle=g; ctx.lineWidth=4-Math.abs(j-2)*0.6; ctx.lineCap='round';
+        ctx.globalAlpha=al*0.85;
+        ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(len,0); ctx.stroke();
+        ctx.restore();
+      });
+      ctx.shadowBlur=0;
+
+    } else if (a.birdIdx===6) {
+      // Muichiro — shifting mist wall (Seventh Form: Obscuring Clouds)
+      ctx.shadowColor='#44ddcc'; ctx.shadowBlur=24;
+      // billowing mist cloud bank
+      for (let i=0;i<7;i++){
+        const cx2=(i*18)+p*20, cy2=(Math.sin(t*0.3+i*0.7)*12)*p, rad=20+p*18+Math.sin(i)*6;
+        const gc2=ctx.createRadialGradient(cx2,cy2,0,cx2,cy2,rad);
+        gc2.addColorStop(0,`rgba(120,240,230,${al*0.4})`); gc2.addColorStop(1,'rgba(80,180,180,0)');
+        ctx.globalAlpha=al*0.85; ctx.fillStyle=gc2;
+        ctx.beginPath(); ctx.arc(cx2,cy2,rad,0,Math.PI*2); ctx.fill();
+      }
+      // mist tendrils
+      for (let j=0;j<5;j++){
+        const ang=(j/5)*Math.PI*1.0-Math.PI*0.5, len=50+p*40;
+        const g=ctx.createLinearGradient(0,0,Math.cos(ang)*len,Math.sin(ang)*len);
+        g.addColorStop(0,`rgba(80,220,210,${al*0.7})`); g.addColorStop(1,'rgba(80,220,210,0)');
+        ctx.strokeStyle=g; ctx.lineWidth=5+p*3; ctx.lineCap='round';
+        ctx.globalAlpha=al*0.75;
+        ctx.beginPath();
+        for (let x2=0;x2<=len;x2+=5){
+          const y2=Math.sin(x2*0.10+t*0.25+j)*(8+p*8);
+          x2===0?ctx.moveTo(x2*Math.cos(ang)-y2*Math.sin(ang),x2*Math.sin(ang)+y2*Math.cos(ang))
+                :ctx.lineTo(x2*Math.cos(ang)-y2*Math.sin(ang),x2*Math.sin(ang)+y2*Math.cos(ang));
+        }
+        ctx.stroke();
+      }
+      ctx.shadowBlur=0;
+
+    } else {
+      // Mitsuri — love wave ribbon slashes (Sixth Form: Cat-legged Winds of Love)
+      ctx.shadowColor='#ff44aa'; ctx.shadowBlur=28;
+      const fg3=ctx.createRadialGradient(0,0,0,0,0,45+p*28);
+      fg3.addColorStop(0,`rgba(255,120,190,${al*0.35})`); fg3.addColorStop(1,'rgba(255,80,150,0)');
+      ctx.globalAlpha=al; ctx.fillStyle=fg3; ctx.beginPath(); ctx.arc(0,0,45+p*28,0,Math.PI*2); ctx.fill();
+      // undulating ribbon streams in pink/green
+      const colors=['rgba(255,100,170,','rgba(80,200,100,','rgba(255,150,200,'];
+      for (let j=0;j<6;j++){
+        const ang=(j/6)*Math.PI*1.5-Math.PI*0.75, len=65+p*55;
+        const col=colors[j%3];
+        const g=ctx.createLinearGradient(0,0,Math.cos(ang)*len,Math.sin(ang)*len);
+        g.addColorStop(0,`${col}${al})`); g.addColorStop(1,`${col}0)`);
+        ctx.strokeStyle=g; ctx.lineWidth=4.5-j*0.4; ctx.lineCap='round';
+        ctx.globalAlpha=al*0.9;
+        ctx.beginPath();
+        for (let x2=0;x2<=len;x2+=4){
+          const y2=Math.sin(x2*0.13+t*0.45+j*0.7)*(6+p*7);
+          x2===0?ctx.moveTo(x2*Math.cos(ang)-y2*Math.sin(ang),x2*Math.sin(ang)+y2*Math.cos(ang))
+                :ctx.lineTo(x2*Math.cos(ang)-y2*Math.sin(ang),x2*Math.sin(ang)+y2*Math.cos(ang));
+        }
+        ctx.stroke();
+      }
+      // floating hearts
+      for (let i=0;i<4;i++){
+        const a2=t*4+i*Math.PI/2, r3=10+p*8;
+        ctx.globalAlpha=al*0.75; ctx.fillStyle='rgba(255,100,170,0.9)';
+        const hx=Math.cos(a2)*r3, hy=Math.sin(a2)*r3;
+        ctx.beginPath(); ctx.arc(hx-2,hy-2,3,Math.PI,0); ctx.arc(hx+2,hy-2,3,Math.PI,0);
+        ctx.lineTo(hx,hy+4); ctx.closePath(); ctx.fill();
       }
       ctx.shadowBlur=0;
     }
@@ -1101,7 +1359,7 @@ function drawSuperAttacks() {
       ctx.shadowColor='#44ffaa'; ctx.shadowBlur=30;
       ctx.fillText('獣', 20, 14);
 
-    } else {
+    } else if (a.birdIdx===3) {
       // ── Rengoku: Flame Breathing — Purgatory ──
       ctx.shadowColor='#ff4400'; ctx.shadowBlur=80;
       // Giant fireball core
@@ -1143,6 +1401,149 @@ function drawSuperAttacks() {
       ctx.font=`bold ${Math.round(R*0.45)}px Arial`; ctx.fillStyle=`rgba(255,220,100,${al})`;
       ctx.shadowColor='#ff6600'; ctx.shadowBlur=40;
       ctx.fillText('炎', 20, 14);
+
+    } else if (a.birdIdx===4) {
+      // ── Shinobu: Insect Breathing — Compound Eye Hexagon ──
+      ctx.shadowColor='#cc44ff'; ctx.shadowBlur=60;
+      const bg=ctx.createRadialGradient(0,0,0,0,0,R*1.2);
+      bg.addColorStop(0,`rgba(180,80,255,${al*0.2})`); bg.addColorStop(1,'rgba(140,0,255,0)');
+      ctx.globalAlpha=al; ctx.fillStyle=bg;
+      ctx.beginPath(); ctx.ellipse(R*0.7,0,R*1.2,R,0,0,Math.PI*2); ctx.fill();
+      // hexagonal compound-eye pattern — 7 circles in hex arrangement
+      const hexCenters=[[0,0],[R*0.4,0],[-R*0.4,0],[R*0.2,R*0.35],[R*0.2,-R*0.35],[-R*0.2,R*0.35],[-R*0.2,-R*0.35]];
+      hexCenters.forEach(([hx,hy],j)=>{
+        const hr=R*0.38;
+        ctx.globalAlpha=al*(0.6+Math.sin(t*0.08+j*0.9)*0.25);
+        ctx.strokeStyle=`rgba(200,120,255,${al})`;
+        ctx.lineWidth=3; ctx.beginPath(); ctx.arc(hx,hy,hr,0,Math.PI*2); ctx.stroke();
+        // radial lines inside each eye
+        for (let k=0;k<6;k++){
+          const ea=k*Math.PI/3+t*0.04;
+          ctx.strokeStyle=`rgba(220,150,255,${al*0.5})`; ctx.lineWidth=1.5;
+          ctx.beginPath(); ctx.moveTo(hx,hy); ctx.lineTo(hx+Math.cos(ea)*hr*0.7,hy+Math.sin(ea)*hr*0.7); ctx.stroke();
+        }
+      });
+      // toxic butterfly wings spanning full half-height
+      for (let j=0;j<10;j++){
+        const ang=(j/10)*Math.PI*1.6-Math.PI*0.8, len=R*0.85;
+        const g=ctx.createLinearGradient(0,0,Math.cos(ang)*len,Math.sin(ang)*len);
+        g.addColorStop(0,`rgba(220,100,255,${al})`); g.addColorStop(0.7,`rgba(160,40,220,${al*0.6})`); g.addColorStop(1,'rgba(140,0,200,0)');
+        ctx.strokeStyle=g; ctx.lineWidth=4-Math.abs(j-4.5)*0.5; ctx.lineCap='round';
+        ctx.globalAlpha=al*0.85;
+        ctx.beginPath();
+        for (let x2=0;x2<=len;x2+=5){
+          const y2=Math.sin(x2*0.12+t*0.25+j*0.5)*(10+Math.abs(Math.sin(ang))*8);
+          x2===0?ctx.moveTo(x2*Math.cos(ang)-y2*Math.sin(ang),x2*Math.sin(ang)+y2*Math.cos(ang))
+                :ctx.lineTo(x2*Math.cos(ang)-y2*Math.sin(ang),x2*Math.sin(ang)+y2*Math.cos(ang));
+        }
+        ctx.stroke();
+      }
+      ctx.globalAlpha=al*0.9; ctx.textAlign='center';
+      ctx.font=`bold ${Math.round(R*0.45)}px Arial`; ctx.fillStyle=`rgba(220,160,255,${al})`;
+      ctx.shadowColor='#cc44ff'; ctx.shadowBlur=30;
+      ctx.fillText('虫', 20, 14);
+
+    } else if (a.birdIdx===5) {
+      // ── Tengen: Sound Breathing — String Performance ──
+      ctx.shadowColor='#ffd000'; ctx.shadowBlur=70;
+      const bg=ctx.createRadialGradient(0,0,0,0,0,R*1.4);
+      bg.addColorStop(0,`rgba(255,230,80,${al*0.3})`); bg.addColorStop(1,'rgba(255,180,0,0)');
+      ctx.globalAlpha=al; ctx.fillStyle=bg;
+      ctx.beginPath(); ctx.ellipse(R*0.8,0,R*1.5,R*1.1,0,0,Math.PI*2); ctx.fill();
+      // concentric sound rings spanning full half-height
+      for (let i=0;i<9;i++){
+        const rad=(i+1)*R*0.24+t*1.2%(R*0.24);
+        const rAl=al*Math.max(0,1-rad/(R*2.5));
+        ctx.globalAlpha=rAl*0.8; ctx.strokeStyle=i%2===0?`rgba(255,230,80,${rAl})`:`rgba(255,160,30,${rAl*0.7})`;
+        ctx.lineWidth=4-i*0.3; ctx.beginPath(); ctx.arc(0,0,rad,0,Math.PI*2); ctx.stroke();
+      }
+      // gem-colored radial slashes
+      for (let j=0;j<16;j++){
+        const ang=(j/16)*Math.PI*2, len=R*0.9;
+        ctx.save(); ctx.rotate(ang);
+        const g=ctx.createLinearGradient(0,0,len,0);
+        const col=j%4===0?`rgba(255,215,60,${al})`:`rgba(255,150,30,${al*0.7})`;
+        g.addColorStop(0,col); g.addColorStop(1,'rgba(255,215,60,0)');
+        ctx.strokeStyle=g; ctx.lineWidth=j%4===0?4:2; ctx.lineCap='round';
+        ctx.globalAlpha=al*0.9;
+        ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(len,0); ctx.stroke();
+        ctx.restore();
+      }
+      ctx.globalAlpha=al*0.9; ctx.textAlign='center';
+      ctx.font=`bold ${Math.round(R*0.45)}px Arial`; ctx.fillStyle=`rgba(255,240,120,${al})`;
+      ctx.shadowColor='#ffd000'; ctx.shadowBlur=35;
+      ctx.fillText('音', 20, 14);
+
+    } else if (a.birdIdx===6) {
+      // ── Muichiro: Mist Breathing — Sea of Clouds and Haze ──
+      ctx.shadowColor='#44ddcc'; ctx.shadowBlur=55;
+      // dense mist ocean
+      for (let i=0;i<14;i++){
+        const cx2=i*R*0.16-R*0.1, cy2=(Math.sin(t*0.04+i*0.6)*R*0.35);
+        const cr=R*(0.35+Math.sin(i*0.8)*0.15);
+        const gc2=ctx.createRadialGradient(cx2,cy2,0,cx2,cy2,cr);
+        gc2.addColorStop(0,`rgba(140,240,230,${al*0.35})`); gc2.addColorStop(1,'rgba(80,180,180,0)');
+        ctx.globalAlpha=al; ctx.fillStyle=gc2;
+        ctx.beginPath(); ctx.arc(cx2,cy2,cr,0,Math.PI*2); ctx.fill();
+      }
+      // mist streaks spreading full half-height
+      for (let j=0;j<8;j++){
+        const ang=(j/8)*Math.PI*1.8-Math.PI*0.9, len=R*0.9;
+        const g=ctx.createLinearGradient(0,0,Math.cos(ang)*len,Math.sin(ang)*len);
+        g.addColorStop(0,`rgba(80,220,210,${al*0.8})`); g.addColorStop(1,'rgba(80,220,210,0)');
+        ctx.strokeStyle=g; ctx.lineWidth=6+j%2*2; ctx.lineCap='round';
+        ctx.globalAlpha=al*0.7;
+        ctx.beginPath();
+        for (let x2=0;x2<=len;x2+=5){
+          const y2=Math.sin(x2*0.08+t*0.15+j*0.7)*(12+j*3);
+          x2===0?ctx.moveTo(x2*Math.cos(ang)-y2*Math.sin(ang),x2*Math.sin(ang)+y2*Math.cos(ang))
+                :ctx.lineTo(x2*Math.cos(ang)-y2*Math.sin(ang),x2*Math.sin(ang)+y2*Math.cos(ang));
+        }
+        ctx.stroke();
+      }
+      ctx.globalAlpha=al*0.9; ctx.textAlign='center';
+      ctx.font=`bold ${Math.round(R*0.45)}px Arial`; ctx.fillStyle=`rgba(160,240,235,${al})`;
+      ctx.shadowColor='#44ddcc'; ctx.shadowBlur=30;
+      ctx.fillText('霞', 20, 14);
+
+    } else {
+      // ── Mitsuri: Love Breathing — Swaying Love Wildly ──
+      ctx.shadowColor='#ff44aa'; ctx.shadowBlur=65;
+      const bg=ctx.createRadialGradient(0,0,0,0,0,R*1.3);
+      bg.addColorStop(0,`rgba(255,100,180,${al*0.25})`); bg.addColorStop(1,'rgba(255,60,130,0)');
+      ctx.globalAlpha=al; ctx.fillStyle=bg;
+      ctx.beginPath(); ctx.ellipse(R*0.7,0,R*1.3,R,0,0,Math.PI*2); ctx.fill();
+      // whip-ribbon streams — pink + green
+      const ribColors=['rgba(255,100,170,','rgba(80,200,100,','rgba(255,170,220,','rgba(120,230,140,'];
+      for (let j=0;j<12;j++){
+        const ang=(j/12)*Math.PI*2, len=R*0.9;
+        const col=ribColors[j%4];
+        const g=ctx.createLinearGradient(0,0,Math.cos(ang)*len,Math.sin(ang)*len);
+        g.addColorStop(0,`${col}${al})`); g.addColorStop(1,`${col}0)`);
+        ctx.strokeStyle=g; ctx.lineWidth=4.5-j%3; ctx.lineCap='round';
+        ctx.globalAlpha=al*0.88;
+        ctx.beginPath();
+        for (let x2=0;x2<=len;x2+=4){
+          const y2=Math.sin(x2*0.12+t*0.3+j*0.52)*(8+j*0.8);
+          x2===0?ctx.moveTo(x2*Math.cos(ang)-y2*Math.sin(ang),x2*Math.sin(ang)+y2*Math.cos(ang))
+                :ctx.lineTo(x2*Math.cos(ang)-y2*Math.sin(ang),x2*Math.sin(ang)+y2*Math.cos(ang));
+        }
+        ctx.stroke();
+      }
+      // heart burst ring
+      for (let i=0;i<10;i++){
+        const ha=i*Math.PI*2/10+t*0.06, hr=R*0.5;
+        const hx=Math.cos(ha)*hr, hy=Math.sin(ha)*hr;
+        ctx.globalAlpha=al*(0.7+Math.sin(t*0.1+i)*0.25); ctx.fillStyle='rgba(255,100,170,0.9)';
+        ctx.save(); ctx.translate(hx,hy); ctx.scale(0.7,0.7);
+        ctx.beginPath(); ctx.arc(-3,-3,4,Math.PI,0); ctx.arc(3,-3,4,Math.PI,0);
+        ctx.lineTo(0,6); ctx.closePath(); ctx.fill();
+        ctx.restore();
+      }
+      ctx.globalAlpha=al*0.9; ctx.textAlign='center';
+      ctx.font=`bold ${Math.round(R*0.45)}px Arial`; ctx.fillStyle=`rgba(255,160,210,${al})`;
+      ctx.shadowColor='#ff44aa'; ctx.shadowBlur=30;
+      ctx.fillText('恋', 20, 14);
     }
 
     // Super technique label — large and prominent
@@ -1221,7 +1622,7 @@ function drawSlashEffects() {
         ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2); ctx.stroke();
       }
 
-    } else {
+    } else if (s.birdIdx===3) {
       // ── Rengoku · Flame Breathing ─ radial flame burst + expanding fire ring
       ctx.shadowColor='#ff4400'; ctx.shadowBlur=22;
       const fr=((1-a)*58)+8;
@@ -1235,6 +1636,84 @@ function drawSlashEffects() {
         ctx.globalAlpha=a*0.9; ctx.strokeStyle=fg2; ctx.lineWidth=3.5; ctx.lineCap='round';
         ctx.beginPath(); ctx.moveTo(Math.cos(ang)*fr*0.35,Math.sin(ang)*fr*0.35);
         ctx.lineTo(Math.cos(ang)*flen*flick,Math.sin(ang)*flen*flick); ctx.stroke();
+      }
+      ctx.shadowBlur=0;
+
+    } else if (s.birdIdx===4) {
+      // ── Shinobu · Insect Breathing ─ purple petal burst + toxic ring
+      ctx.shadowColor='#cc44ff'; ctx.shadowBlur=16;
+      const pr=((1-a)*55)+8;
+      const pg=ctx.createRadialGradient(0,0,0,0,0,pr);
+      pg.addColorStop(0,`rgba(220,120,255,${a*0.85})`); pg.addColorStop(1,'rgba(160,40,220,0)');
+      ctx.globalAlpha=a; ctx.fillStyle=pg; ctx.beginPath(); ctx.arc(0,0,pr,0,Math.PI*2); ctx.fill();
+      for (let i=0;i<8;i++){
+        const ang=(i/8)*Math.PI*2, len=((1-a)*60)+12;
+        const g=ctx.createLinearGradient(0,0,Math.cos(ang)*len,Math.sin(ang)*len);
+        g.addColorStop(0,'rgba(220,100,255,0.9)'); g.addColorStop(1,'rgba(200,80,255,0)');
+        ctx.strokeStyle=g; ctx.lineWidth=2.2; ctx.lineCap='round';
+        ctx.globalAlpha=a*0.9;
+        ctx.beginPath();
+        ctx.moveTo(Math.cos(ang)*pr*0.3,Math.sin(ang)*pr*0.3);
+        ctx.lineTo(Math.cos(ang)*len, Math.sin(ang)*len); ctx.stroke();
+      }
+      // toxic ring
+      const tr=((1-a)*48)+6;
+      ctx.globalAlpha=a*0.5; ctx.strokeStyle='rgba(180,80,255,0.8)'; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.arc(0,0,tr,0,Math.PI*2); ctx.stroke();
+      ctx.shadowBlur=0;
+
+    } else if (s.birdIdx===5) {
+      // ── Tengen · Sound Breathing ─ concentric sound rings + gem flash
+      ctx.shadowColor='#ffd000'; ctx.shadowBlur=18;
+      for (let i=0;i<4;i++){
+        const sr=((1-a)*65)+i*14+6;
+        ctx.globalAlpha=a*(0.75-i*0.15); ctx.strokeStyle=i%2===0?'rgba(255,220,60,0.9)':'rgba(255,150,30,0.7)'; ctx.lineWidth=2.5-i*0.4;
+        ctx.beginPath(); ctx.arc(0,0,sr,0,Math.PI*2); ctx.stroke();
+      }
+      for (let i=0;i<6;i++){
+        const ang=(i/6)*Math.PI*2, len=((1-a)*58)+14;
+        ctx.globalAlpha=a*0.85; ctx.strokeStyle='rgba(255,215,60,0.9)'; ctx.lineWidth=2.5;
+        ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(Math.cos(ang)*len,Math.sin(ang)*len); ctx.stroke();
+      }
+      ctx.shadowBlur=0;
+
+    } else if (s.birdIdx===6) {
+      // ── Muichiro · Mist Breathing ─ drifting mist puffs + rings
+      ctx.shadowColor='#44ddcc'; ctx.shadowBlur=14;
+      for (let i=0;i<5;i++){
+        const mr=((1-a)*50)+i*10+5;
+        ctx.globalAlpha=a*(0.3-i*0.04);
+        const mg=ctx.createRadialGradient(0,0,0,0,0,mr);
+        mg.addColorStop(0,`rgba(120,240,230,${a*0.5})`); mg.addColorStop(1,'rgba(80,180,180,0)');
+        ctx.fillStyle=mg; ctx.beginPath(); ctx.arc(0,0,mr,0,Math.PI*2); ctx.fill();
+      }
+      for (let i=0;i<6;i++){
+        const ang=(i/6)*Math.PI*2, len=((1-a)*55)+12;
+        const g=ctx.createLinearGradient(0,0,Math.cos(ang)*len,Math.sin(ang)*len);
+        g.addColorStop(0,'rgba(80,220,210,0.85)'); g.addColorStop(1,'rgba(80,220,210,0)');
+        ctx.strokeStyle=g; ctx.lineWidth=2.8; ctx.lineCap='round';
+        ctx.globalAlpha=a*0.8;
+        ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(Math.cos(ang)*len,Math.sin(ang)*len); ctx.stroke();
+      }
+      ctx.shadowBlur=0;
+
+    } else {
+      // ── Mitsuri · Love Breathing ─ ribbon burst + heart sparks
+      ctx.shadowColor='#ff44aa'; ctx.shadowBlur=18;
+      const lr=((1-a)*52)+8;
+      const lg=ctx.createRadialGradient(0,0,0,0,0,lr);
+      lg.addColorStop(0,`rgba(255,120,190,${a*0.85})`); lg.addColorStop(1,'rgba(255,60,130,0)');
+      ctx.globalAlpha=a; ctx.fillStyle=lg; ctx.beginPath(); ctx.arc(0,0,lr,0,Math.PI*2); ctx.fill();
+      const lColors=['rgba(255,100,170,','rgba(80,200,100,'];
+      for (let i=0;i<8;i++){
+        const ang=(i/8)*Math.PI*2, len=((1-a)*62)+14;
+        const col=lColors[i%2];
+        const g=ctx.createLinearGradient(0,0,Math.cos(ang)*len,Math.sin(ang)*len);
+        g.addColorStop(0,`${col}0.9)`); g.addColorStop(1,`${col}0)`);
+        ctx.strokeStyle=g; ctx.lineWidth=3; ctx.lineCap='round';
+        ctx.globalAlpha=a*0.9;
+        ctx.beginPath(); ctx.moveTo(Math.cos(ang)*lr*0.3,Math.sin(ang)*lr*0.3);
+        ctx.lineTo(Math.cos(ang)*len, Math.sin(ang)*len); ctx.stroke();
       }
       ctx.shadowBlur=0;
     }
@@ -1313,6 +1792,35 @@ function emitTrail(def) {
       vx:-1.5-Math.random()*3, vy:-0.4-Math.random()*2,
       life:1, color:Math.random()>0.5?'#ffdd00':'#ff8800',
       size:1+Math.random()*2, type:'ember' });
+  } else if (b===4) { // Shinobu — butterfly scales + poison wisps
+    if (Math.random()>0.55) return;
+    particles.push({ x:bird.x-bird.radius+Math.random()*6, y:bird.y+(Math.random()-0.5)*14,
+      vx:-1-Math.random()*2.5, vy:(Math.random()-0.5)*1.2-0.4,
+      life:1, color:Math.random()>0.4?def.trail1:def.trail2,
+      size:2+Math.random()*3.5, type:'butterfly' });
+    if (Math.random()<0.20) particles.push({ x:bird.x-bird.radius, y:bird.y+(Math.random()-0.5)*10,
+      vx:-0.5, vy:0, life:1, color:'#cc66ff', size:3, type:'ripple', maxSize:12+Math.random()*8 });
+  } else if (b===5) { // Tengen — sound rings + gem sparks
+    if (Math.random()>0.60) return;
+    particles.push({ x:bird.x-bird.radius, y:bird.y+(Math.random()-0.5)*10,
+      vx:-2-Math.random()*3.5, vy:(Math.random()-0.5)*2.5,
+      life:1, color:Math.random()>0.3?def.trail1:def.trail2,
+      size:1.5+Math.random()*2.5, type:'spark' });
+    if (Math.random()<0.25) particles.push({ x:bird.x-bird.radius-4, y:bird.y+(Math.random()-0.5)*8,
+      vx:-0.8, vy:0, life:1, color:'#ffe080', size:0, type:'soundring',
+      maxSize:14+Math.random()*12 });
+  } else if (b===6) { // Muichiro — mist wisps
+    if (Math.random()>0.50) return;
+    particles.push({ x:bird.x-bird.radius+Math.random()*6, y:bird.y+(Math.random()-0.5)*16,
+      vx:-0.8-Math.random()*1.5, vy:(Math.random()-0.5)*1.0,
+      life:1, color:Math.random()>0.4?def.trail1:def.trail2,
+      size:4+Math.random()*6, type:'mist' });
+  } else if (b===7) { // Mitsuri — pink petals
+    if (Math.random()>0.55) return;
+    particles.push({ x:bird.x-bird.radius+Math.random()*8, y:bird.y+(Math.random()-0.5)*14,
+      vx:-1.2-Math.random()*2.2, vy:(Math.random()-0.5)*1.4-0.3,
+      life:1, color:Math.random()>0.45?def.trail1:def.trail2,
+      size:2.5+Math.random()*3.5, type:'petal', angle:Math.random()*Math.PI*2 });
   } else {
     if (Math.random()>0.55) return;
     particles.push({ x:bird.x-bird.radius, y:bird.y+(Math.random()-0.5)*12,
@@ -1323,12 +1831,16 @@ function emitTrail(def) {
 function updateParticles() {
   particles.forEach(p=>{
     p.x+=p.vx; p.y+=p.vy;
-    if      (p.type==='fire')   { p.vy-=0.07; p.vx*=0.97; }
-    else if (p.type==='ember')  { p.vy-=0.04; }
-    else if (p.type==='water')  { p.vy+=0.06; }
-    else if (p.type==='ripple') { /* expands, no gravity */ }
-    else                        { p.vy+=0.05; }
-    const decay = p.type==='bolt'?0.10 : p.type==='spark'?0.07 : p.type==='ripple'?0.028 : 0.045;
+    if      (p.type==='fire')      { p.vy-=0.07; p.vx*=0.97; }
+    else if (p.type==='ember')     { p.vy-=0.04; }
+    else if (p.type==='water')     { p.vy+=0.06; }
+    else if (p.type==='ripple')    { /* expands */ }
+    else if (p.type==='soundring') { /* expands */ }
+    else if (p.type==='butterfly') { p.vy+=Math.sin(p.life*8)*0.08; }
+    else if (p.type==='mist')      { p.vx*=0.96; p.vy*=0.96; }
+    else if (p.type==='petal')     { p.vy+=0.04; p.angle=(p.angle||0)+0.12; }
+    else                           { p.vy+=0.05; }
+    const decay = p.type==='bolt'?0.10 : p.type==='spark'?0.07 : p.type==='ripple'?0.028 : p.type==='soundring'?0.032 : p.type==='mist'?0.022 : 0.045;
     p.life-=decay;
   });
   particles=particles.filter(p=>p.life>0);
@@ -1384,6 +1896,29 @@ function drawParticles() {
       ctx.fillStyle=p.color;
       ctx.beginPath(); ctx.arc(p.x,p.y,p.size*p.life,0,Math.PI*2); ctx.fill();
       ctx.shadowBlur=0;
+    } else if (p.type==='butterfly') {
+      ctx.globalAlpha=p.life*0.8;
+      ctx.fillStyle=p.color;
+      const r=p.size*p.life;
+      // two wing-lobes
+      ctx.beginPath(); ctx.ellipse(p.x-r*0.4,p.y,r*0.9,r*0.55,Math.PI*0.25,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(p.x+r*0.4,p.y,r*0.9,r*0.55,-Math.PI*0.25,0,Math.PI*2); ctx.fill();
+    } else if (p.type==='soundring') {
+      const r=p.maxSize*(1-p.life);
+      ctx.globalAlpha=p.life*0.55; ctx.strokeStyle=p.color; ctx.lineWidth=1.8;
+      ctx.beginPath(); ctx.arc(p.x,p.y,r,0,Math.PI*2); ctx.stroke();
+    } else if (p.type==='mist') {
+      ctx.globalAlpha=p.life*0.35;
+      const rg=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.size*p.life);
+      rg.addColorStop(0,p.color); rg.addColorStop(1,'rgba(200,255,255,0)');
+      ctx.fillStyle=rg;
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.size*p.life,0,Math.PI*2); ctx.fill();
+    } else if (p.type==='petal') {
+      ctx.globalAlpha=p.life*0.8;
+      ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.angle||0);
+      ctx.fillStyle=p.color;
+      ctx.beginPath(); ctx.ellipse(0,0,p.size*p.life*1.2,p.size*p.life*0.6,0,0,Math.PI*2); ctx.fill();
+      ctx.restore();
     } else {
       ctx.globalAlpha=p.life*0.75;
       ctx.fillStyle=p.color;
@@ -1398,11 +1933,21 @@ function drawParticles() {
 //  Layout rects
 // ────────────────────────────────────────────────
 function getSizeRect(i)  { const sw=90,sh=36,gap=10,tot=3*sw+2*gap; return {x:(W-tot)/2+i*(sw+gap),y:H*0.20,w:sw,h:sh}; }
-function getBirdRect(i)  { const bw=Math.min(145,(W-40)/4),bh=Math.min(160,bw*1.18); return {x:(W-bw*4)/2+i*bw,y:H*0.35,w:bw,h:bh}; }
-function getDiffRect(i)  { const dw=Math.min(108,(W-60)/3-8),dh=38,gap=Math.min(12,(W-3*dw-40)/2),tot=3*dw+2*gap; return {x:(W-tot)/2+i*(dw+gap),y:H*0.645,w:dw,h:dh}; }
-function getPlayRect()   { return {x:W/2-165,y:H*0.765,w:150,h:46}; }
-function getLeadRect()   { return {x:W/2+15, y:H*0.765,w:150,h:46}; }
-function getDemoRect()   { return {x:W/2-80, y:H*0.845,w:160,h:32}; }
+function getBirdRect(i)  {
+  const cols=4;
+  const bw=Math.min(145,(W-40)/cols), bh=Math.min(100,bw*0.78);
+  const row=Math.floor(i/cols), col=i%cols;
+  const gapY=8;
+  return {x:(W-bw*cols)/2+col*bw, y:H*0.295+row*(bh+gapY), w:bw, h:bh};
+}
+function getBirdGridBottom() {
+  const bw=Math.min(145,(W-40)/4), bh=Math.min(100,bw*0.78);
+  return H*0.295 + 2*(bh+8);
+}
+function getDiffRect(i)  { const gb=getBirdGridBottom(), dw=Math.min(108,(W-60)/3-8),dh=38,gap=Math.min(12,(W-3*dw-40)/2),tot=3*dw+2*gap; return {x:(W-tot)/2+i*(dw+gap),y:gb+18,w:dw,h:dh}; }
+function getPlayRect()   { const gb=getBirdGridBottom(); return {x:W/2-165,y:gb+70,w:150,h:46}; }
+function getLeadRect()   { const gb=getBirdGridBottom(); return {x:W/2+15, y:gb+70,w:150,h:46}; }
+function getDemoRect()   { const gb=getBirdGridBottom(); return {x:W/2-80, y:gb+124,w:160,h:32}; }
 function inRect(mx,my,r) { return mx>r.x&&mx<r.x+r.w&&my>r.y&&my<r.y+r.h; }
 
 // ────────────────────────────────────────────────
@@ -1416,14 +1961,14 @@ function getTouch(e){ const r=canvas.getBoundingClientRect(),t=e.touches[0]; ret
 canvas.addEventListener('mousemove',e=>{
   if(gameState!=='select') return;
   const {mx,my}=getMouse(e); hoverBird=-1; hoverDiff=''; hoverSize='';
-  for(let i=0;i<4;i++) if(inRect(mx,my,getBirdRect(i))) hoverBird=i;
+  for(let i=0;i<8;i++) if(inRect(mx,my,getBirdRect(i))) hoverBird=i;
   DIFF_KEYS.forEach((k,i)=>{ if(inRect(mx,my,getDiffRect(i))) hoverDiff=k; });
   SIZE_KEYS.forEach((k,i)=>{ if(inRect(mx,my,getSizeRect(i))) hoverSize=k; });
 });
 
 function handleSelectClick(mx,my) {
   for(let i=0;i<3;i++) if(inRect(mx,my,getSizeRect(i))){ applySize(SIZE_KEYS[i]); return; }
-  for(let i=0;i<4;i++) if(inRect(mx,my,getBirdRect(i))){ selectedBird=i; return; }
+  for(let i=0;i<8;i++) if(inRect(mx,my,getBirdRect(i))){ selectedBird=i; return; }
   DIFF_KEYS.forEach((k,i)=>{ if(inRect(mx,my,getDiffRect(i))) selectedDiff=k; });
   if(inRect(mx,my,getPlayRect())){ demoMode=false; initGame(); gameState='waiting'; startMusic(); return; }
   if(inRect(mx,my,getLeadRect())){ gameState='leaderboard'; return; }
@@ -1688,6 +2233,20 @@ function drawPowerUp(p) {
     ctx.fillStyle='#aaddff'; ctx.beginPath(); ctx.arc(p.x-2,p.y-2,5,0,Math.PI*2); ctx.fill();
     ctx.font='bold 10px Arial'; ctx.fillStyle='#fff'; ctx.textAlign='center';
     ctx.fillText('🛡',p.x,p.y+4);
+  } else if (p.type==='superShield') {
+    // Golden super-shield orb
+    const g=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,26);
+    g.addColorStop(0,`rgba(255,230,60,${glow})`); g.addColorStop(0.5,`rgba(255,160,0,${glow*0.7})`); g.addColorStop(1,'rgba(200,80,0,0)');
+    ctx.fillStyle=g; ctx.beginPath(); ctx.arc(p.x,p.y,26,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#ffcc00'; ctx.beginPath(); ctx.arc(p.x,p.y,10,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#fff5aa'; ctx.beginPath(); ctx.arc(p.x-2,p.y-2,5,0,Math.PI*2); ctx.fill();
+    // star ring
+    ctx.shadowColor='#ffd700'; ctx.shadowBlur=10;
+    ctx.strokeStyle=`rgba(255,215,0,${glow})`; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.arc(p.x,p.y,16,0,Math.PI*2); ctx.stroke();
+    ctx.shadowBlur=0;
+    ctx.font='bold 10px Arial'; ctx.fillStyle='#fff'; ctx.textAlign='center';
+    ctx.fillText('✨',p.x,p.y+4);
   }
 }
 
@@ -1711,8 +2270,12 @@ function drawBirdAt(x, y, def, angle, wingAngle, scale=1) {
   // shield aura
   if (shieldActive && scale===1) {
     const sa=0.4+0.3*Math.abs(Math.sin(shieldTimer*0.1));
-    ctx.fillStyle=`rgba(80,160,255,${sa})`;
+    ctx.fillStyle=shieldIsSuper?`rgba(255,200,0,${sa})`:`rgba(80,160,255,${sa})`;
     ctx.beginPath(); ctx.arc(0,0,R+8,0,Math.PI*2); ctx.fill();
+    if (shieldIsSuper) {
+      ctx.strokeStyle=`rgba(255,230,80,${sa+0.2})`; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.arc(0,0,R+10,0,Math.PI*2); ctx.stroke();
+    }
   }
 
   // Elemental aura — shown during gameplay and waiting
@@ -1760,6 +2323,33 @@ function drawBirdAt(x, y, def, angle, wingAngle, scale=1) {
         ctx.beginPath(); ctx.moveTo(Math.cos(a)*R,Math.sin(a)*R); ctx.lineTo(Math.cos(a)*(R+fh),Math.sin(a)*(R+fh)-3); ctx.stroke();
       }
       ctx.shadowBlur=0;
+    } else if (selectedBird===4) {
+      // Shinobu — faint violet petal orbit
+      ctx.shadowColor='#cc44ff'; ctx.shadowBlur=6;
+      for (let i=0;i<5;i++){
+        const a=t*2.8+i*Math.PI*2/5, r=R+7;
+        ctx.fillStyle=`rgba(204,102,255,${0.3+Math.sin(t*3+i)*0.12})`;
+        ctx.beginPath(); ctx.ellipse(Math.cos(a)*r,Math.sin(a)*r,3,1.5,a,0,Math.PI*2); ctx.fill();
+      }
+      ctx.shadowBlur=0;
+    } else if (selectedBird===5) {
+      // Tengen — sound ring pulses
+      for (let i=0;i<2;i++){
+        const r=R+5+Math.sin(t*4+i*Math.PI)*4;
+        ctx.strokeStyle=`rgba(255,220,60,${0.2+Math.sin(t*4+i*Math.PI)*0.1})`;
+        ctx.lineWidth=1.5; ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2); ctx.stroke();
+      }
+    } else if (selectedBird===6) {
+      // Muichiro — slow mist rings
+      for (let i=0;i<2;i++){
+        const r=R+3+Math.sin(t*1.5+i*Math.PI)*5;
+        ctx.strokeStyle=`rgba(80,220,210,${0.15+Math.sin(t*1.5+i*Math.PI)*0.08})`;
+        ctx.lineWidth=2; ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2); ctx.stroke();
+      }
+    } else if (selectedBird===7) {
+      // Mitsuri — soft pink glow ring
+      ctx.strokeStyle=`rgba(255,100,180,${0.18+Math.sin(t*2.5)*0.08})`;
+      ctx.lineWidth=2; ctx.beginPath(); ctx.arc(0,0,R+5,0,Math.PI*2); ctx.stroke();
     }
   }
 
@@ -1833,24 +2423,24 @@ function drawSelectScreen() {
   }
 
   // Bird selection
-  secLabel('CHOOSE YOUR SLAYER', H*0.338);
-  for(let i=0;i<4;i++){
+  secLabel('CHOOSE YOUR SLAYER', H*0.282);
+  for(let i=0;i<8;i++){
     const b=getBirdRect(i), def=BIRD_DEFS[i];
     const isSel=selectedBird===i, isH=hoverBird===i;
     ctx.fillStyle=isSel?'rgba(255,50,50,0.15)':isH?'rgba(255,255,255,0.06)':'rgba(255,255,255,0.03)';
     ctx.strokeStyle=isSel?'#ff4444':isH?'rgba(255,200,200,0.4)':'rgba(255,255,255,0.12)';
     ctx.lineWidth=isSel?2:1;
     ctx.beginPath(); ctx.roundRect(b.x+3,b.y+3,b.w-6,b.h-6,10); ctx.fill(); ctx.stroke();
-    const sc=Math.max(0.72,Math.min(1.3,b.w/82));
-    drawBirdAt(b.x+b.w/2,b.y+b.h*0.46,def,0,performance.now()*0.004,sc);
-    ctx.font=`bold ${Math.round(b.w*0.13)}px Arial`; ctx.fillStyle=isSel?'#ff6666':'#cc99aa'; ctx.textAlign='center';
-    ctx.fillText(def.name,b.x+b.w/2,b.y+b.h-14);
-    ctx.font=`${Math.round(b.w*0.10)}px Arial`; ctx.fillStyle=isSel?'#ffaaaa':'#886688';
+    const sc=Math.max(0.62,Math.min(1.1,b.w/82));
+    drawBirdAt(b.x+b.w/2,b.y+b.h*0.44,def,0,performance.now()*0.004,sc);
+    ctx.font=`bold ${Math.round(b.w*0.12)}px Arial`; ctx.fillStyle=isSel?'#ff6666':'#cc99aa'; ctx.textAlign='center';
+    ctx.fillText(def.name,b.x+b.w/2,b.y+b.h-13);
+    ctx.font=`${Math.round(b.w*0.09)}px Arial`; ctx.fillStyle=isSel?'#ffaaaa':'#886688';
     ctx.fillText(def.subtitle,b.x+b.w/2,b.y+b.h-2);
   }
 
   // Difficulty
-  secLabel('DIFFICULTY', H*0.628);
+  secLabel('DIFFICULTY', getBirdGridBottom()+6);
   DIFF_KEYS.forEach((k,i)=>{
     const d=getDiffRect(i),def=DIFF_DEFS[k];
     const isSel=selectedDiff===k,isH=hoverDiff===k;
@@ -1862,8 +2452,8 @@ function drawSelectScreen() {
     ctx.fillText(def.label,d.x+d.w/2,d.y+d.h/2+5);
   });
 
-  const py=H*0.765;
   const pr=getPlayRect(),lr=getLeadRect();
+  const py=pr.y;
   ctx.fillStyle='#cc1111'; ctx.shadowColor='rgba(255,50,50,0.6)'; ctx.shadowBlur=14;
   ctx.beginPath(); ctx.roundRect(pr.x,py,pr.w,46,12); ctx.fill(); ctx.shadowBlur=0;
   ctx.font='bold 19px Arial'; ctx.fillStyle='#fff'; ctx.textAlign='center';
@@ -1886,7 +2476,7 @@ function drawSelectScreen() {
 
   // Version — bottom right
   ctx.font='11px Arial'; ctx.fillStyle='rgba(150,100,220,0.35)'; ctx.textAlign='right';
-  ctx.fillText('v1.0.0', W-10, H-8);
+  ctx.fillText('v1.1.0', W-10, H-8);
 }
 
 // ────────────────────────────────────────────────
@@ -1999,12 +2589,14 @@ function drawHUD() {
 
   // Shield timer bar
   if (shieldActive) {
-    const pct=shieldTimer/180, bw=100, bh=8, bx=W/2-bw/2, by=88;
+    const maxT=shieldIsSuper?450:180, pct=shieldTimer/maxT, bw=100, bh=8, bx=W/2-bw/2, by=88;
     ctx.fillStyle='rgba(0,0,0,0.3)'; ctx.fillRect(bx,by,bw,bh);
     const sg=ctx.createLinearGradient(bx,0,bx+bw*pct,0);
-    sg.addColorStop(0,'#4499ff'); sg.addColorStop(1,'#aaddff');
+    if (shieldIsSuper) { sg.addColorStop(0,'#ffcc00'); sg.addColorStop(1,'#fff5aa'); }
+    else               { sg.addColorStop(0,'#4499ff'); sg.addColorStop(1,'#aaddff'); }
     ctx.fillStyle=sg; ctx.fillRect(bx,by,bw*pct,bh);
-    ctx.font='10px Arial'; ctx.fillStyle='#aaddff'; ctx.fillText('🛡 SHIELD',W/2,by+20);
+    ctx.font='10px Arial'; ctx.fillStyle=shieldIsSuper?'#ffd700':'#aaddff'; ctx.textAlign='center';
+    ctx.fillText(shieldIsSuper?'✨ SUPER SHIELD':'🛡 SHIELD',W/2,by+20);
   }
 
   // Level-up flash banner
@@ -2124,7 +2716,7 @@ function update(now) {
   bird.y += bird.vy;
   clouds.forEach(c=>{ c.x-=c.speed; if(c.x+c.w<0) c.x=W+c.w; });
 
-  if (shieldActive) { shieldTimer--; if(shieldTimer<=0){shieldActive=false;} }
+  if (shieldActive) { shieldTimer--; if(shieldTimer<=0){shieldActive=false; shieldIsSuper=false;} }
 
   if (now-lastPipeTime>pipeInterval) spawnPipe(now);
 
@@ -2155,7 +2747,12 @@ function update(now) {
   // Power-ups
   powerUps.forEach(p=>{ p.x-=pipeSpeed; });
   powerUps.forEach(p=>{
-    if(!p.collected){ const dx=p.x-bird.x,dy=p.y-bird.y; if(dx*dx+dy*dy<(bird.radius+14)**2){ p.collected=true; shieldActive=true; shieldTimer=180; playShield(); flashTimer=12; flashColor='rgb(80,160,255)'; } }
+    if(!p.collected){ const dx=p.x-bird.x,dy=p.y-bird.y; if(dx*dx+dy*dy<(bird.radius+14)**2){
+      p.collected=true; shieldActive=true;
+      if(p.type==='superShield'){ shieldTimer=450; shieldIsSuper=true; flashTimer=18; flashColor='rgb(255,200,0)'; }
+      else { shieldTimer=180; shieldIsSuper=false; flashTimer=12; flashColor='rgb(80,160,255)'; }
+      playShield();
+    } }
   });
   powerUps=powerUps.filter(p=>p.x>-30&&!p.collected);
 
