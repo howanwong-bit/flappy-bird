@@ -500,6 +500,7 @@ let skyTheme = 0;
 //  Decorations
 // ────────────────────────────────────────────────
 let clouds, stars, bushes, groundDecos, groundOffset = 0;
+let leaderScroll = 0, leaderTouchStartY = 0, leaderTouchScrollStart = 0;
 
 function initDecorations() {
   clouds  = Array.from({length:Math.ceil(W/80)}, ()=>({ x:Math.random()*W, y:40+Math.random()*160, w:60+Math.random()*60, h:25+Math.random()*20, speed:0.3+Math.random()*0.3 }));
@@ -518,6 +519,9 @@ function initDecorations() {
   // Bamboo shoots — thin with nodes
   for (let i=0;i<Math.ceil(W/180);i++)
     groundDecos.push({ type:'bamboo', x:Math.random()*W, h:28+Math.random()*24, speed:0.30+Math.random()*0.08 });
+  // Ground demons — small crouching demons marching along the ground
+  for (let i=0;i<Math.ceil(W/130);i++)
+    groundDecos.push({ type:'groundDemon', x:Math.random()*W, size:9+Math.random()*5, phase:Math.random()*Math.PI*2, speed:0.55+Math.random()*0.15 });
   groundOffset = 0;
 }
 
@@ -675,7 +679,9 @@ function isGlobalLeaderboard() {
 function saveScore(name, sc, diff, stage) {
   // Always save to local storage
   let s=getLocalScores();
-  const entry={ name:(name||'').trim()||'Anonymous', score:sc, diff, stage, date:new Date().toLocaleDateString() };
+  const cleanName=(name||'').trim()||'Anonymous';
+  if(cleanName!=='Anonymous') localStorage.setItem('flappyDSLastName',cleanName);
+  const entry={ name:cleanName, score:sc, diff, stage, date:new Date().toLocaleDateString() };
   s.push(entry);
   s.sort((a,b)=>b.score-a.score);
   localStorage.setItem('flappyDSScores', JSON.stringify(s.slice(0,10)));
@@ -689,13 +695,14 @@ function saveScore(name, sc, diff, stage) {
 function showNameOverlay() {
   oSub.textContent  = `Stage ${currentLevel+1} · ${DIFF_DEFS[selectedDiff].label}`;
   oScore.textContent = score;
-  nameInp.value=''; nameOvr.style.display='block';
-  setTimeout(()=>nameInp.focus(),50);
+  const lastName=localStorage.getItem('flappyDSLastName')||'';
+  nameInp.value=lastName; nameOvr.style.display='block';
+  setTimeout(()=>{ nameInp.focus(); nameInp.select(); },50);
 }
 function hideNameOverlay() { nameOvr.style.display='none'; }
-function submitScore() { saveScore(nameInp.value, score, selectedDiff, currentLevel+1); hideNameOverlay(); gameState='leaderboard'; fetchGlobalScores(); }
+function submitScore() { saveScore(nameInp.value, score, selectedDiff, currentLevel+1); hideNameOverlay(); gameState='leaderboard'; leaderScroll=0; fetchGlobalScores(); }
 saveBtn.addEventListener('click', submitScore);
-skipBtn.addEventListener('click', ()=>{ hideNameOverlay(); gameState='leaderboard'; });
+skipBtn.addEventListener('click', ()=>{ hideNameOverlay(); gameState='leaderboard'; leaderScroll=0; });
 nameInp.addEventListener('keydown', e=>{ if(e.key==='Enter') submitScore(); });
 
 // ────────────────────────────────────────────────
@@ -2841,7 +2848,7 @@ function handleSelectClick(mx,my) {
   for(let i=0;i<12;i++) if(inRect(mx,my,getBirdRect(i))){ selectedBird=i; return; }
   DIFF_KEYS.forEach((k,i)=>{ if(inRect(mx,my,getDiffRect(i))) selectedDiff=k; });
   if(inRect(mx,my,getPlayRect())){ demoMode=false; initGame(); gameState='waiting'; startMusic(); return; }
-  if(inRect(mx,my,getLeadRect())){ gameState='leaderboard'; fetchGlobalScores(); return; }
+  if(inRect(mx,my,getLeadRect())){ gameState='leaderboard'; leaderScroll=0; fetchGlobalScores(); return; }
   if(inRect(mx,my,getDemoRect())){ demoMode=true; initGame(); gameState='waiting'; startMusic(); return; }
   if(inRect(mx,my,getAbilitiesRect())){ abilitiesPage=0; gameState='abilities'; return; }
 }
@@ -2852,7 +2859,7 @@ canvas.addEventListener('click',e=>{
   const {mx,my}=getMouse(e);
   if(gameState==='select')      { handleSelectClick(mx,my); return; }
   if(gameState==='abilities')   { handleAbilitiesClick(mx,my); return; }
-  if(gameState==='leaderboard') { gameState='select'; return; }
+  if(gameState==='leaderboard') { if(mx>=W/2-80&&mx<=W/2+80&&my>=H-58&&my<=H-20) gameState='select'; return; }
   if(gameState==='dead')        { if(score===0) gameState='select'; return; }
 });
 // ── mouse: press = jump, hold = arm glide
@@ -2874,18 +2881,44 @@ canvas.addEventListener('touchstart',e=>{
   if(demoMode){ demoMode=false; inputHeld=false; gameState='select'; return; }
   if(gameState==='select')      { const {mx,my}=getTouch(e); handleSelectClick(mx,my); return; }
   if(gameState==='abilities')   { const {mx,my}=getTouch(e); handleAbilitiesClick(mx,my); return; }
-  if(gameState==='leaderboard') { gameState='select'; return; }
+  if(gameState==='leaderboard') { leaderTouchStartY=ty; leaderTouchScrollStart=leaderScroll; return; }
   if(gameState==='dead')        { if(score===0) gameState='select'; return; }
   if(gameState==='waiting') { jump(); inputHeld=true; return; }
   if(gameState==='playing') { jump(); inputHeld=true; }
 },{passive:false});
+canvas.addEventListener('touchmove',e=>{
+  e.preventDefault();
+  if(gameState==='leaderboard'){
+    const r=canvas.getBoundingClientRect();
+    const ty2=(e.touches[0].clientY-r.top)*(H/r.height);
+    leaderScroll=Math.max(0,Math.min(leaderMaxScroll(),leaderTouchScrollStart+(leaderTouchStartY-ty2)));
+  }
+},{passive:false});
 canvas.addEventListener('touchend', e=>{
   e.preventDefault();
+  if(gameState==='leaderboard'){
+    const r=canvas.getBoundingClientRect(), t2=e.changedTouches[0];
+    const tx2=(t2.clientX-r.left)*(W/r.width), ty2=(t2.clientY-r.top)*(H/r.height);
+    if(Math.abs(ty2-leaderTouchStartY)<10 && tx2>=W/2-80&&tx2<=W/2+80&&ty2>=H-58&&ty2<=H-20)
+      gameState='select';
+    return;
+  }
   if(e.touches.length === 0) inputHeld=false;
+},{passive:false});
+
+// ── wheel: scroll leaderboard
+canvas.addEventListener('wheel',e=>{
+  if(gameState!=='leaderboard') return;
+  e.preventDefault();
+  leaderScroll=Math.max(0,Math.min(leaderMaxScroll(),leaderScroll+e.deltaY*0.6));
 },{passive:false});
 
 // ── keyboard: press = jump, hold = arm glide, release = fall
 document.addEventListener('keydown',e=>{
+  if(gameState==='leaderboard'){
+    if(e.code==='ArrowDown'){ e.preventDefault(); leaderScroll=Math.min(leaderMaxScroll(),leaderScroll+30); return; }
+    if(e.code==='ArrowUp'){ e.preventDefault(); leaderScroll=Math.max(0,leaderScroll-30); return; }
+  }
   if(demoMode && e.code!=='Backspace'){ demoMode=false; inputHeld=false; gameState='select'; return; }
   if(e.code!=='Space') return;
   e.preventDefault();
@@ -3046,6 +3079,44 @@ function drawGround(scroll) {
           ctx.ellipse(d.x+(s%3===0?5:-5),ny-2,5,2,s%3===0?0.4:-0.4,0,Math.PI*2); ctx.fill();
         }
       }
+    } else if(d.type==='groundDemon') {
+      ctx.save();
+      const sz=d.size;
+      const wt=performance.now()*0.003+d.phase;
+      const bob=Math.sin(wt*2)*1.2;
+      const bodyY=gy-sz*0.95+bob;          // body centre
+      const headR=sz*0.52;
+      const headY=bodyY-sz*0.88-headR;     // head centre
+      const bc=skyTheme>=3?'#2a0505':skyTheme>=2?'#3d0808':'#550e0e';
+      const hc=skyTheme>=3?'#3a0707':skyTheme>=2?'#551010':'#6e1414';
+      // Ground shadow
+      ctx.globalAlpha=0.22; ctx.fillStyle='rgba(0,0,0,0.6)';
+      ctx.beginPath(); ctx.ellipse(d.x,gy+3,sz*0.85,3,0,0,Math.PI*2); ctx.fill();
+      // Body
+      ctx.globalAlpha=0.88; ctx.fillStyle=bc;
+      ctx.beginPath(); ctx.ellipse(d.x,bodyY,sz*0.52,sz*0.88,0,0,Math.PI*2); ctx.fill();
+      // Head
+      ctx.fillStyle=hc;
+      ctx.beginPath(); ctx.arc(d.x,headY,headR,0,Math.PI*2); ctx.fill();
+      // Horns
+      ctx.fillStyle='#1a0303';
+      ctx.beginPath(); ctx.moveTo(d.x-headR*0.35,headY-headR*0.4); ctx.lineTo(d.x-headR*0.55,headY-headR*1.35); ctx.lineTo(d.x-headR*0.1,headY-headR*0.2); ctx.closePath(); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(d.x+headR*0.35,headY-headR*0.4); ctx.lineTo(d.x+headR*0.55,headY-headR*1.35); ctx.lineTo(d.x+headR*0.1,headY-headR*0.2); ctx.closePath(); ctx.fill();
+      // Glowing eyes
+      ctx.globalAlpha=0.95; ctx.fillStyle='#ff2200'; ctx.shadowColor='#ff3300'; ctx.shadowBlur=7;
+      ctx.beginPath(); ctx.arc(d.x-headR*0.3,headY-headR*0.06,1.8,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(d.x+headR*0.3,headY-headR*0.06,1.8,0,Math.PI*2); ctx.fill();
+      ctx.shadowBlur=0;
+      // 4 legs with alternating walk cycle
+      ctx.strokeStyle=bc; ctx.lineWidth=1.5; ctx.lineCap='round'; ctx.globalAlpha=0.82;
+      for(let leg=0;leg<4;leg++){
+        const lx=d.x+(leg-1.5)*sz*0.42;
+        const lph=wt+(leg%2===0?0:Math.PI);
+        const lift=Math.max(0,Math.sin(lph))*4;
+        const footX=lx+Math.sin(lph)*2.5;
+        ctx.beginPath(); ctx.moveTo(lx,bodyY+sz*0.75); ctx.lineTo(footX,gy-1-lift); ctx.stroke();
+      }
+      ctx.restore();
     }
   });
 
@@ -3392,7 +3463,7 @@ function drawAbilities() {
   }
   // Version
   ctx.font='11px Arial'; ctx.fillStyle='rgba(150,100,220,0.35)'; ctx.textAlign='right';
-  ctx.fillText('v1.7.0', W-10, H-8);
+  ctx.fillText('v1.9.0', W-10, H-8);
 }
 
 function drawSelectScreen() {
@@ -3485,12 +3556,18 @@ function drawSelectScreen() {
 
   // Version — bottom right
   ctx.font='11px Arial'; ctx.fillStyle='rgba(150,100,220,0.35)'; ctx.textAlign='right';
-  ctx.fillText('v1.7.0', W-10, H-8);
+  ctx.fillText('v1.9.0', W-10, H-8);
 }
 
 // ────────────────────────────────────────────────
 //  Draw: Leaderboard
 // ────────────────────────────────────────────────
+function leaderMaxScroll() {
+  const scores=getScores(), rowH=Math.min(38,(H-140)/12), startY=78;
+  const totalH=scores.length*rowH, visibleH=H-(startY+rowH)-80;
+  return Math.max(0, totalH-visibleH);
+}
+
 function drawLeaderboard() {
   const bg=ctx.createLinearGradient(0,0,0,H);
   bg.addColorStop(0,'#0a0015'); bg.addColorStop(1,'#1a0035');
@@ -3514,19 +3591,27 @@ function drawLeaderboard() {
     ctx.fillStyle='rgba(200,180,255,0.5)'; ctx.fillText('📱 Local scores · Set up Firebase for global leaderboard', W/2, 68);
   }
 
-  const scores=getScores(), px=W*0.04, pw=W*0.92, rowH=Math.min(38,(H-140)/12), startY=78;
-  const cols={rank:px+pw*0.05,score:px+pw*0.20,name:px+pw*0.50,diff:px+pw*0.72,stage:px+pw*0.87,date:px+pw*0.97};
+  const scores=getScores(), px=W*0.04, pw=W*0.92-8, rowH=Math.min(38,(H-140)/12), startY=78;
+  const cols={rank:px+pw*0.05,score:px+pw*0.20,name:px+pw*0.50,diff:px+pw*0.72,stage:px+pw*0.87};
 
   if(!scores.length){
     ctx.font='17px Arial'; ctx.fillStyle='#cc99ff'; ctx.textAlign='center';
     ctx.fillText('No slayers yet — enter the fray!', W/2, H/2);
   } else {
+    // Fixed column header row
     ctx.fillStyle='rgba(150,80,255,0.12)'; ctx.fillRect(px,startY,pw,rowH);
     ctx.font='bold 12px Arial'; ctx.fillStyle='#cc88ff';
     [['#',cols.rank],['Score',cols.score],['Name',cols.name],['Diff',cols.diff],['Stage',cols.stage]].forEach(([t,x])=>{ ctx.textAlign='center'; ctx.fillText(t,x,startY+rowH/2+4); });
 
+    // Scrollable data rows — clipped
+    const clipTop=startY+rowH, clipBot=H-80;
+    const maxS=leaderMaxScroll();
+    leaderScroll=Math.max(0,Math.min(maxS,leaderScroll));
+    ctx.save();
+    ctx.beginPath(); ctx.rect(0,clipTop,W,clipBot-clipTop); ctx.clip();
     scores.forEach((s,i)=>{
-      const ry=startY+rowH*(i+1);
+      const ry=clipTop+rowH*i-leaderScroll;
+      if(ry+rowH<clipTop||ry>clipBot) return;
       ctx.fillStyle=i===0?'rgba(255,215,0,0.1)':i%2===0?'rgba(255,255,255,0.04)':'rgba(255,255,255,0.02)';
       ctx.fillRect(px,ry,pw,rowH);
       ctx.textAlign='center';
@@ -3541,13 +3626,25 @@ function drawLeaderboard() {
       ctx.font=`${rowH*0.3}px Arial`; ctx.fillStyle='#cc99ff';
       ctx.fillText(s.stage?`S${s.stage}`:'?',cols.stage,ry+rowH/2+5);
     });
+    ctx.restore();
+
+    // Scrollbar
+    if(maxS>0){
+      const trackH=clipBot-clipTop, thumbH=Math.max(20,(clipBot-clipTop)/(scores.length*rowH)*trackH);
+      const thumbY=clipTop+(leaderScroll/maxS)*(trackH-thumbH);
+      ctx.fillStyle='rgba(100,60,180,0.25)'; ctx.fillRect(W-7,clipTop,4,trackH);
+      ctx.fillStyle='rgba(200,140,255,0.75)';
+      ctx.beginPath(); ctx.roundRect(W-7,thumbY,4,thumbH,2); ctx.fill();
+      ctx.font='10px Arial'; ctx.fillStyle='rgba(180,130,255,0.5)'; ctx.textAlign='center';
+      ctx.fillText('scroll ↕',W/2,clipBot+12);
+    }
   }
 
-  const bx=W/2-80,by=H-60;
+  const bx=W/2-80,by=H-58;
   ctx.fillStyle='rgba(255,255,255,0.07)'; ctx.strokeStyle='rgba(150,80,255,0.4)'; ctx.lineWidth=2;
-  ctx.beginPath(); ctx.roundRect(bx,by,160,42,10); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.roundRect(bx,by,160,38,10); ctx.fill(); ctx.stroke();
   ctx.font='bold 16px Arial'; ctx.fillStyle='#cc99ff'; ctx.textAlign='center';
-  ctx.fillText('← Back to Menu',W/2,by+27);
+  ctx.fillText('← Back to Menu',W/2,by+25);
 }
 
 // ────────────────────────────────────────────────
